@@ -26,21 +26,32 @@ class Test(object):
     return jsons
 
   def generate_queries(self) -> list:
-    queries = []
-    operator_queries = [ {'operator_id': random.choice(self.operators)} for i in range(self.size/2) ]
-    region_queries = [ {'region': random.choice(self.regions)} for i in range(self.size/2) ]
-    return queries
+    operator_queries = [ {'operator_id': random.choice(self.operators)} for i in range(int(self.size/2)) ]
+    region_queries = [ {'region': random.choice(self.regions)} for i in range(int(self.size/2)) ]
+    return operator_queries + region_queries
 
-  def insert(self) -> None:
-    start = time.time()
+  def write_test(self, scenario='one') -> None:
     data = self.generate_jsons()
+    start = time.time()
+    if scenario == 'one':
+      for i in range(self.size):
+        col.insert_one(data[i])
+    else:
+      col.insert_many(data)
+    writing_time = time.time() - start
+    print(f'Writing {test_size} values took {writing_time} seconds. Scenario: insert {scenario}.')
+
+  def read_test(self) -> None:
+    data = self.generate_queries()
+    start = time.time()
     for i in range(self.size):
-      col.insert_one(data[i])
-    writting_time = time.time() - start
-    print('Inserting {} values took {} seconds'.format(test_size, writting_time))
+      col.find_one(data[i])
+    reading_time = time.time() - start
+    print(f'Reading {test_size} values took {reading_time} seconds')
 
 if __name__ == '__main__':
-  test_size = 100000
+  print('Enter test sample size:')
+  test_size = int(input())
   tester = Test(test_size)
   client = MongoClient('mongodb://root:pass@localhost:27017/')
   # create new database
@@ -48,8 +59,10 @@ if __name__ == '__main__':
   col = db['test-data']
 
   # insert data, measure write time
-  tester.insert()
+  tester.write_test()
+  tester.write_test('many')
 
   # send queries, measure response time
+  tester.read_test()
 
   # see how much disk space has been used
