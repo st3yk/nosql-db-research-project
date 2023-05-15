@@ -27,11 +27,13 @@ if __name__ == '__main__':
   print(client.list_database_names())
 
   # insert data, measure write time
-  test_size = 100
+  test_size = 100000
   data = generate_jsons(test_size)
   start = time.time()
   for i in range(test_size):
-    col.
+    col.insert_one(data[i])
+  writting_time = time.time() - start
+  print('Inserting {} values took {} seconds'.format(test_size, writting_time))
 
 
   # send queries, measure response time
