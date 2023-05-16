@@ -75,7 +75,7 @@ class Test(object):
     data = self.generate_queries()
     start = time.time()
     for i in range(self.size):
-      self.col.find_one(data[i])
+      self.col.find(data[i])
     reading_time = time.time() - start
     print(f'Reading {test_size} values took {reading_time} seconds')
 
@@ -83,7 +83,6 @@ def get_options() -> list:
   collection_type = 'document'
   test_size = 1000
   argv = sys.argv[1:]
-  print(argv)
   try:
     opts, args = getopt.gnu_getopt(argv, 't:s:', ['type=', 'size='])
   except:
@@ -100,14 +99,13 @@ def get_options() -> list:
 if __name__ == '__main__':
   # initialize tester
   test_size, collection_type = get_options()
-  print(test_size, collection_type)
+  # print(test_size, collection_type)
   tester = Test(test_size, collection_type)
 
   # insert data, measure write time
-  tester.write_test()
+  # tester.write_test()
   tester.write_test('many')
 
   # send queries, measure response time
   tester.read_test()
 
-  # see how much disk space has been used
