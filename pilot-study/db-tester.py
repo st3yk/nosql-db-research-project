@@ -5,6 +5,7 @@ import string
 import time
 import sys
 import getopt
+import datetime
 
 class Test(object):
   def __init__(self, size : int, col_type : str) -> None:
@@ -22,21 +23,40 @@ class Test(object):
 
   def generate_data(self) -> list:
     data = []
-    for i in range(self.size):
-      to_add = {}
-      to_add['id'] = int(random.choice(range(0,10000000)))
-      to_add['timestamp_id'] = int(random.choice(range(0,10000000)))
-      to_add['timestamp'] = int(random.choice(range(0,10000000)))
-      to_add['region'] = random.choice(self.regions)
-      to_add['value'] = float(random.choice(range(0,10000000)))
-      to_add['operator_id'] = random.choice(self.operators)
-      data.append(to_add)
+    timestamps = self.generate_timestamps()
+    if self.col_type == 'document':
+      for i in range(self.size):
+        to_add = {}
+        to_add['id'] = int(random.choice(range(0,10000000)))
+        to_add['timestamp_id'] = int(random.choice(range(0,10000000)))
+        to_add['timestamp'] = timestamps[i]
+        to_add['region'] = random.choice(self.regions)
+        to_add['value'] = float(random.choice(range(0,10000000)))
+        to_add['operator_id'] = random.choice(self.operators)
+        data.append(to_add)
+    elif self.col_type == 'timeseries':
+      for i in range(self.size):
+        to_add = {}
+        to_add['timestamp'] = int(random.choice(range(0,10000000)))
+        to_add['value'] = float(random.choice(range(0,10000000)))
+        to_add['metadata'] = {
+          'id': int(random.choice(range(0,10000000))),
+          'timestamp_id' : int(random.choice(range(0,10000000))),
+          'region' : random.choice(self.regions),
+          'operator_id' : random.choice(self.operators)
+        }
+        data.append(to_add)
     return data
 
   def generate_queries(self) -> list:
     operator_queries = [ {'operator_id': random.choice(self.operators)} for i in range(int(self.size/2)) ]
     region_queries = [ {'region': random.choice(self.regions)} for i in range(int(self.size/2)) ]
     return operator_queries + region_queries
+
+  def generate_timestamps(self) -> list:
+    base = datetime.datetime.utcnow()
+    print(base)
+    return [base - datetime.timedelta(seconds=x) for x in range(self.size)]
 
   def write_test(self, scenario='one') -> None:
     data = self.generate_data()
@@ -57,7 +77,7 @@ class Test(object):
     reading_time = time.time() - start
     print(f'Reading {test_size} values took {reading_time} seconds')
 
-def get_options():
+def get_options() -> list:
   collection_type = 'document'
   test_size = 1000
   argv = sys.argv[1:]
@@ -73,7 +93,7 @@ def get_options():
     elif opt in ['-s', '--size']:
       test_size = arg
 
-  return int(test_size), collection_type
+  return int(test_size), str(collection_type)
 
 if __name__ == '__main__':
   # initialize tester
