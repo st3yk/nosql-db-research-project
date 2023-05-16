@@ -19,7 +19,10 @@ class Test(object):
     if col_type == 'document':
       self.col = self.db['test-document-collection']
     elif col_type == 'timeseries':
-      self.col = self.db.create_collection('test-timeseries-collection', timeseries={ 'timeField': 'timestamp' })
+      if 'test-timeseries-collection' not in self.db.list_collection_names():
+        self.col = self.db.create_collection('test-timeseries-collection', timeseries={ 'timeField': 'timestamp' })
+      else:
+        self.col = self.db['test-timeseries-collection']
 
   def generate_data(self) -> list:
     data = []
@@ -37,7 +40,7 @@ class Test(object):
     elif self.col_type == 'timeseries':
       for i in range(self.size):
         to_add = {}
-        to_add['timestamp'] = int(random.choice(range(0,10000000)))
+        to_add['timestamp'] = timestamps[i]
         to_add['value'] = float(random.choice(range(0,10000000)))
         to_add['metadata'] = {
           'id': int(random.choice(range(0,10000000))),
@@ -55,7 +58,6 @@ class Test(object):
 
   def generate_timestamps(self) -> list:
     base = datetime.datetime.utcnow()
-    print(base)
     return [base - datetime.timedelta(seconds=x) for x in range(self.size)]
 
   def write_test(self, scenario='one') -> None:
