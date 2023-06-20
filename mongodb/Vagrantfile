@@ -1,0 +1,21 @@
+#! vagrant
+
+BOX = "generic/centos7"
+
+Vagrant.configure("2") do |config|
+  config.vm.define "mongodb" do |srv|
+      srv.vm.box = BOX
+      srv.vm.network "private_network", ip: "192.168.56.20"
+      srv.vm.hostname = "mongodb"
+      srv.ssh.insert_key = false
+      srv.ssh.forward_agent = true
+      srv.vm.provider "virtualbox" do |vb|
+          vb.memory = 4096
+          vb.cpus = 4
+          vb.name = "mongodb"
+      end
+     srv.vm.provision "ansible" do |ansible|
+       ansible.playbook="playbooks/install-mongo.yaml"
+     end
+  end
+end
