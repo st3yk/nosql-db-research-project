@@ -1,3 +1,4 @@
 pilot-study/mongo-data
 .vscode
+**/.vagrant
 **/*.swp
