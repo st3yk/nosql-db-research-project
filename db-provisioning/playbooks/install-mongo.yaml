@@ -1,0 +1,63 @@
+---
+# Need to run 'ansible-galaxy collection install ansible.posix'
+- hosts: all
+  become: true
+  tasks:
+  - name: Add MongoDB yum repository
+    yum_repository:
+      name: mongodb-org-6.0
+      description: MongoDB Repository
+      baseurl: https://repo.mongodb.org/yum/redhat/$releasever/mongodb-org/6.0/x86_64/
+      enabled: 1
+      gpgcheck: 1
+      gpgkey: https://www.mongodb.org/static/pgp/server-6.0.asc
+
+  - name: Install mongodb packages
+    yum:
+      name:
+      - mongodb-org-6.0.4
+      - mongodb-org-database-6.0.4
+      - mongodb-org-server-6.0.4
+      - mongodb-org-mongos-6.0.4
+      - mongodb-org-tools-6.0.4
+      state: present
+
+  - name: Pin Mongo packages to fix db version
+    lineinfile:
+      path: /etc/yum.conf
+      line: exclude=mongodb-org,mongodb-org-database,mongodb-org-server,mongodb-mongosh,mongodb-org-mongos,mongodb-org-tools
+
+  - name: Ensure packages needed for configuring SELinux are available
+    yum:
+      name:
+      - git
+      - make
+      - checkpolicy
+      - policycoreutils
+      - selinux-policy-devel
+      state: present
+
+  - name: Clone mongodb-selinux policy repository
+    become: no
+    git:
+      repo: 'https://github.com/mongodb/mongodb-selinux'
+      dest: /home/vagrant/mongodb-selinux
+      single_branch: yes
+      version: master
+
+  - name: Build selinux policy
+    become: no
+    command: make
+    args:
+      chdir: /home/vagrant/mongodb-selinux
+
+  - name: Install selinux policy
+    command: make install
+    args:
+      chdir: /home/vagrant/mongodb-selinux
+
+  - name: Start mongod service
+    systemd:
+      name: mongod
+      state: restarted
+      enabled: true
