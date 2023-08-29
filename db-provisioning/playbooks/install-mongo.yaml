@@ -1,6 +1,5 @@
 ---
 # Need to run 'ansible-galaxy collection install ansible.posix'
-# and ansible-galaxy collection install kubernetes.core before using
 - hosts: all
   become: true
   tasks:
@@ -28,26 +27,6 @@
       path: /etc/yum.conf
       line: exclude=mongodb-org,mongodb-org-database,mongodb-org-server,mongodb-mongosh,mongodb-org-mongos,mongodb-org-tools
 
-  - name: Specify recommended ulimit settings
-    blockinfile:
-      create: true
-      path: /etc/systemd/system/mongod.service
-      block: |
-        [Service]
-        # Other directives omitted
-        # (file size)
-        LimitFSIZE=infinity
-        # (cpu time)
-        LimitCPU=infinity
-        # (virtual memory size)
-        LimitAS=infinity
-        # (locked-in-memory size)
-        LimitMEMLOCK=infinity
-        # (open files)
-        LimitNOFILE=64000
-        # (processes/threads)
-        LimitNPROC=64000
-
   - name: Ensure packages needed for configuring SELinux are available
     yum:
       name:
@@ -58,7 +37,27 @@
       - selinux-policy-devel
       state: present
 
-  - name: Clone mongodb-selinux repository
+  - name: Clone mongodb-selinux policy repository
+    become: no
     git:
       repo: 'https://github.com/mongodb/mongodb-selinux'
-      dest: /home/vagrant
+      dest: /home/vagrant/mongodb-selinux
+      single_branch: yes
+      version: master
+
+  - name: Build selinux policy
+    become: no
+    command: make
+    args:
+      chdir: /home/vagrant/mongodb-selinux
+
+  - name: Install selinux policy
+    command: make install
+    args:
+      chdir: /home/vagrant/mongodb-selinux
+
+  - name: Start mongod service
+    systemd:
+      name: mongod
+      state: restarted
+      enabled: true
