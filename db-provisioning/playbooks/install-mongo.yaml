@@ -55,9 +55,3 @@
     command: make install
     args:
       chdir: /home/vagrant/mongodb-selinux
-
-  - name: Start mongod service
-    systemd:
-      name: mongod
-      state: restarted
-      enabled: true
