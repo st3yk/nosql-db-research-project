@@ -1,0 +1,10 @@
+- hosts: all
+  become: true
+  tasks:
+  - name: Copy file with owner and permissions
+    blockinfile:
+      path: /etc/hosts
+      block: |
+        192.168.56.21 db-vm-1.kti.pl db-vm-1
+        192.168.56.22 db-vm-2.kti.pl db-vm-2
+        192.168.56.23 db-vm-3.kti.pl db-vm-3
