@@ -1,0 +1,30 @@
+name: KICS Scan
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  playbooks_kics_scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Mkdir ansible-scan-results
+        run: mkdir -p ansible-scan-results
+      - name: Run KICS Scan with SARIF result
+        uses: checkmarx/kics-github-action@v1.7.0
+        with:
+          path: 'db-provisioning/playbooks'
+          output_path: ansible-scan-results
+          token: ${{ secrets.GITHUB_TOKEN }}
+          platform_type: ansible
+          output_formats: 'sarif'
+          enable_comments: true
+          ignore_on_exit: results
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: ansible-scan-results/results.sarif
