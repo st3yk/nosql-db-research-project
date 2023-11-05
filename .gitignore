@@ -2,3 +2,4 @@ pilot-study/mongo-data
 .vscode
 **/.vagrant
 **/*.swp
+**/elastic_token

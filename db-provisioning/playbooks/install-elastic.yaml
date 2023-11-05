@@ -1,0 +1,38 @@
+---
+- hosts: all
+  become: true
+  tasks:
+  - name: Add Elastic yum repository
+    ansible.builtin.yum_repository:
+      name: elasticsearch
+      description: Elasticsearch Repository for 8.x packages
+      baseurl: https://artifacts.elastic.co/packages/8.x/yum
+      enabled: 1
+      gpgcheck: 1
+      gpgkey: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+
+  - name: Install elasticsearch packages
+    ansible.builtin.yum:
+      name:
+      - elasticsearch
+      state: present
+
+  - name: Pin elasticsearch packages to fix db version
+    ansible.builtin.lineinfile:
+      path: /etc/yum.conf
+      line: exclude=elasticsearch
+
+  - name: Copy keyfile
+    ansible.builtin.copy:
+      src: ../cfgs/keyfile # change with `openssl rand -base64 756 > keyfile`
+      dest: /home/vagrant/.secrets/
+      owner: vagrant
+      group: vagrant
+      mode: '0600'
+
+  - name: Permit traffic in default zone for elasticsearch service
+    ansible.posix.firewalld:
+      port: 9200/tcp
+      state: enabled
+      permanent: true
+      immediate: true

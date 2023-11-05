@@ -1,0 +1,19 @@
+---
+- hosts: db_masters
+  become: true
+  tasks:
+  - name: Provide systemd with the Elasticsearch keystore
+  - name: Start elasticsearch service
+    ansible.builtin.systemd:
+      daemon_reload: true
+      state: started
+      name: elasticsearch
+      enabled: true
+
+  - name: Generate enrollment token for nodes to come
+    ansible.builtin.command: /usr/share/elasticsearch/bin/elasticsearch-create-enrollment-token -s node
+    register: enrollment_token 
+
+  - name: Copy enrollment token to local file
+    become: false
+    local_action: copy content="{{ enrollment_token.stdout_lines[0] }}" dest="./elastic_token"
