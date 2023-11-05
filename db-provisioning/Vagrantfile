@@ -1,7 +1,7 @@
 #! vagrant
 
 BOX = "generic/alma8"
-N = 1
+N = 3
 
 Vagrant.configure("2") do |config|
   (1..N).each do |i|
@@ -13,7 +13,7 @@ Vagrant.configure("2") do |config|
         srv.ssh.forward_agent = true
         srv.vm.provider "virtualbox" do |vb|
             vb.memory = 4096
-            vb.cpus = 2
+            vb.cpus = 4
             vb.name = "db-vm-#{i}"
         end
         srv.vm.provision "ansible" do |ansible|
