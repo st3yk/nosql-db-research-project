@@ -1,5 +1,4 @@
 ---
-# Need to run 'ansible-galaxy collection install ansible.posix'
 - hosts: all
   become: true
   tasks:
