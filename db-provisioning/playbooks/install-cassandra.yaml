@@ -1,0 +1,57 @@
+---
+# Need to run 'ansible-galaxy collection install ansible.posix'
+- hosts: all
+  become: true
+  tasks:
+  - name: Install java-1.8.0
+    ansible.builtin.yum:
+      name:
+      - java-1.8.0-openjdk
+      state: present
+
+  - name: Add Cassandra yum repository
+    ansible.builtin.yum_repository:
+      name: cassandra
+      description: Apache Cassandra
+      baseurl: https://redhat.cassandra.apache.org/41x/
+      enabled: true
+      gpgcheck: true
+      repo_gpgcheck: true
+      gpgkey: https://downloads.apache.org/cassandra/KEYS
+
+  - name: Install cassandra packages
+    ansible.builtin.yum:
+      name:
+      - cassandra
+      state: present
+
+  - name: Pin Cassandra packages to fix db version
+    ansible.builtin.lineinfile:
+      path: /etc/yum.conf
+      line: exclude=cassandra
+
+  - name: Get host IP addr
+    ansible.builtin.shell: ip a l eth1 | awk '/inet / { print $2 }' | awk -F '/' '{ print $1 }'
+    register: ip
+
+  - name: Replace IP addr in mongod.conf file
+    ansible.builtin.replace:
+      path: /etc/cassandra/default.conf/cassandra.yaml
+      regexp: 'listen_address: localhost'
+      replace: 'listen_address: {{ ip.stdout }}'
+
+  - name: Permit traffic for storage and native transport ports
+    ansible.posix.firewalld:
+      port: "{{ item }}"
+      state: enabled
+      permanent: true
+      immediate: true
+    loop:
+      - 7000/tcp
+      - 9042/tcp
+
+  - name: Start cassandra service
+    ansible.builtin.systemd:
+      name: cassandra
+      state: restarted
+      enabled: true
