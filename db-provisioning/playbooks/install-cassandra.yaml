@@ -33,11 +33,25 @@
     ansible.builtin.shell: ip a l eth1 | awk '/inet / { print $2 }' | awk -F '/' '{ print $1 }'
     register: ip
 
-  - name: Replace IP addr in mongod.conf file
+  - name: Change cluster name to jbt-cluster
     ansible.builtin.replace:
-      path: /etc/cassandra/default.conf/cassandra.yaml
-      regexp: 'listen_address: localhost'
-      replace: 'listen_address: {{ ip.stdout }}'
+      path: /etc/cassandra/conf/cassandra.yaml
+      regexp: "cluster_name: 'Test Cluster'"
+      replace: "cluster_name: 'jbt-cluster'"
+
+  # In default config changes only listen_address and rpc_address
+  - name: Replace localhost with vm IP addr in cassandra.conf
+    ansible.builtin.replace:
+      path: /etc/cassandra/conf/cassandra.yaml
+      regexp: 'localhost'
+      replace: '{{ ip.stdout }}'
+
+  # TODO Check if it is correct, it works, but not sure how
+  - name: Change seeds to vms IP addr
+    ansible.builtin.replace:
+      path: /etc/cassandra/conf/cassandra.yaml
+      regexp: 'seeds: "127.0.0.1:7000"'
+      replace: 'seeds: "{{ ip.stdout }}:7000"'
 
   - name: Permit traffic for storage and native transport ports
     ansible.posix.firewalld:
@@ -47,6 +61,7 @@
       immediate: true
     loop:
       - 7000/tcp
+      - 7199/tcp
       - 9042/tcp
 
   - name: Start cassandra service
