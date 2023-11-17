@@ -1,6 +1,7 @@
 ---
 - hosts: all
   become: true
+  name: Set up MongoDB Replicaset
   tasks:
   # TODO, USE KEYFILES
   # - name: Copy keyfile
@@ -11,33 +12,34 @@
   #     group: mongod
   #     mode: '0400'
 
-  - name: Copy config
-    ansible.builtin.copy:
-      src: ../cfgs/mongod.conf
-      dest: /etc/mongod.conf
-      owner: root
-      group: root
-      mode: '0644'
+    - name: Copy config
+      ansible.builtin.copy:
+        src: ../cfgs/mongod.conf
+        dest: /etc/mongod.conf
+        owner: root
+        group: root
+        mode: "0644"
 
-  - name: Get node IP addr
-    ansible.builtin.shell: ip a l eth1 | awk '/inet / { print $2 }' | awk -F '/' '{ print $1 }'
-    register: ip
+    - name: Get node IP addr
+      ansible.builtin.shell: set -o pipefail && ip a l eth1 | awk '/inet / { print $2 }' | awk -F '/' '{ print $1 }'
+      register: ip
+      changed_when: false
 
-  - name: Replace IP addr in mongod.conf file
-    ansible.builtin.replace:
-      path: /etc/mongod.conf
-      regexp: 'CHANGE_ME'
-      replace: '{{ ip.stdout }}'
+    - name: Replace IP addr in mongod.conf file
+      ansible.builtin.replace:
+        path: /etc/mongod.conf
+        regexp: CHANGE_ME
+        replace: "{{ ip.stdout }}"
 
-  - name: permit traffic in default zone for mongo service
-    ansible.posix.firewalld:
-      port: 27017/tcp
-      state: enabled
-      permanent: true
-      immediate: true
+    - name: Permit traffic in default zone for mongo service
+      ansible.posix.firewalld:
+        port: 27017/tcp
+        state: enabled
+        permanent: true
+        immediate: true
 
-  - name: Start mongod service
-    ansible.builtin.systemd:
-      name: mongod
-      state: restarted
-      enabled: true
+    - name: Start mongod service
+      ansible.builtin.systemd:
+        name: mongod
+        state: restarted
+        enabled: true
