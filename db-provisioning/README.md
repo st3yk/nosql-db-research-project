@@ -17,3 +17,8 @@ user@host:~/research-project/db-provisioning$ ansible-playbook -i inventory.yaml
 ```shell
 user@host:~/research-project/db-provisioning$ ansible-playbook -i inventory.yaml playbooks/install-cassandra.yaml
 ```
+### Install Elastic
+```shell
+user@host:~/research-project/db-provisioning$ ansible-playbook -i inventory.yaml playbooks/install-elastic.yaml
+user@host:~/research-project/db-provisioning$ ansible-playbook -i inventory.yaml playbooks/start-elastic.yaml
+```

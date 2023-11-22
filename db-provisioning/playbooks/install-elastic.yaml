@@ -1,6 +1,7 @@
 ---
 - hosts: all
   become: true
+  name: Install Elasticsearch
   tasks:
   - name: Add Elastic yum repository
     ansible.builtin.yum_repository:
@@ -21,18 +22,3 @@
     ansible.builtin.lineinfile:
       path: /etc/yum.conf
       line: exclude=elasticsearch
-
-  - name: Copy keyfile
-    ansible.builtin.copy:
-      src: ../cfgs/keyfile # change with `openssl rand -base64 756 > keyfile`
-      dest: /home/vagrant/.secrets/
-      owner: vagrant
-      group: vagrant
-      mode: '0600'
-
-  - name: Permit traffic in default zone for elasticsearch service
-    ansible.posix.firewalld:
-      port: 9200/tcp
-      state: enabled
-      permanent: true
-      immediate: true

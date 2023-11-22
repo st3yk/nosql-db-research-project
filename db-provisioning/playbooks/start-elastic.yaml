@@ -1,0 +1,48 @@
+---
+- hosts: all
+  become: true
+  name: Start first node of elasticsearch cluster
+  tasks:
+  - name: Permit traffic in default zone for elasticsearch service
+    ansible.posix.firewalld:
+      port: "{{ item }}"
+      state: enabled
+      permanent: true
+      immediate: true
+    loop:
+      - 9200/tcp
+      - 9300/tcp
+
+  - name: Copy elasticsearch conf file from host
+    ansible.builtin.copy:
+      src: ../cfgs/elasticsearch.yml
+      dest: /etc/elasticsearch/elasticsearch.yml
+      owner: root
+      group: elasticsearch
+      mode: "0660"
+
+  - name: Get node IP addr
+    ansible.builtin.shell: set -o pipefail && ip a l eth1 | awk '/inet / { print $2 }' | awk -F '/' '{ print $1 }'
+    register: ip
+    changed_when: false
+
+  - name: Replace IP addr in elasticsearch.yml file
+    ansible.builtin.replace:
+      path: /etc/elasticsearch/elasticsearch.yml
+      regexp: CHANGE_ME
+      replace: "{{ ip.stdout }}"
+
+  - name: Start elasticsearch service
+    ansible.builtin.systemd:
+      daemon_reload: true
+      state: started
+      name: elasticsearch
+      enabled: true
+
+  # - name: Generate enrollment token for nodes to come
+  #   ansible.builtin.command: /usr/share/elasticsearch/bin/elasticsearch-create-enrollment-token -s node
+  #   register: enrollment_token
+
+  # - name: Copy enrollment token to local file
+  #   become: false
+  #   local_action: copy content="{{ enrollment_token.stdout_lines[0] }}" dest="../cfgs/elastic_token"
