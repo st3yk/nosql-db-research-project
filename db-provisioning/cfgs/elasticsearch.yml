@@ -1,0 +1,35 @@
+# Path to directory where to store the data (separate multiple locations by comma):
+path.data: /var/lib/elasticsearch
+# Path to log files:
+path.logs: /var/log/elasticsearch
+
+# Disable security features
+xpack.security.enabled: false
+xpack.security.enrollment.enabled: false
+
+# Disable encryption for HTTP API client connections, such as Kibana, Logstash, and Agents
+xpack.security.http.ssl:
+  enabled: false
+  # keystore.path: http.p12
+
+# Disable encryption and mutual authentication between cluster nodes
+xpack.security.transport.ssl:
+  enabled: false
+
+cluster.name: jbt-elastic
+cluster.initial_master_nodes:
+  - db-vm-1
+node.name: ${HOSTNAME}
+network.host: CHANGE_ME
+discovery.seed_hosts:
+   - db-vm-1.jbt.pl
+   - db-vm-2.jbt.pl
+   - db-vm-3.jbt.pl
+
+# Allow HTTP API connections from anywhere
+# Connections are encrypted and require user authentication
+http.host: CHANGE_ME
+
+# Allow other nodes to join the cluster from anywhere
+# Connections are encrypted and mutually authenticated
+transport.host: CHANGE_ME
