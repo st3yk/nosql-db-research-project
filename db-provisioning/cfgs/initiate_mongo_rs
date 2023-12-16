@@ -1,10 +1,9 @@
 # ssh to one member of a cluster and run inside mongosh
 rs.initiate( {
-   _id : "rs-1",
+   _id : "jbt-cluster",
    members: [
-      { _id: 0, host: "db-vm-1.kti.pl:27017" },
-      { _id: 1, host: "db-vm-2.kti.pl:27017" },
-      { _id: 2, host: "db-vm-3.kti.pl:27017" }
+      { _id: 0, host: "db-vm-1.jbt.pl:27017" },
+      { _id: 1, host: "db-vm-2.jbt.pl:27017" },
+      { _id: 2, host: "db-vm-3.jbt.pl:27017" }
    ]
 })
-

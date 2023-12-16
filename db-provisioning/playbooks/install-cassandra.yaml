@@ -30,30 +30,24 @@
         path: /etc/yum.conf
         line: exclude=cassandra
 
+    - name: Copy cassandra conf file from host
+      ansible.builtin.copy:
+        src: ../cfgs/cassandra.yaml
+        dest: /etc/cassandra/conf/cassandra.yaml
+        owner: root
+        group: root
+        mode: "0644"
+
     - name: Get host IP addr
       ansible.builtin.shell: set -o pipefail && ip a l eth1 | awk '/inet / { print $2 }' | awk -F '/' '{ print $1 }'
       register: ip
       changed_when: false
 
-    - name: Change cluster name to jbt-cluster
+    - name: Replace IP addr in cassandra.yaml file
       ansible.builtin.replace:
         path: /etc/cassandra/conf/cassandra.yaml
-        regexp: "cluster_name: 'Test Cluster'"
-        replace: "cluster_name: 'jbt-cluster'"
-
-    # In default config changes only listen_address and rpc_address
-    - name: Replace localhost with vm IP addr in cassandra.conf
-      ansible.builtin.replace:
-        path: /etc/cassandra/conf/cassandra.yaml
-        regexp: localhost
+        regexp: CHANGE_ME
         replace: "{{ ip.stdout }}"
-
-    # TODO Check if it is correct, it works, but not sure how
-    - name: Change seeds to vms IP addr
-      ansible.builtin.replace:
-        path: /etc/cassandra/conf/cassandra.yaml
-        regexp: 'seeds: "127.0.0.1:7000"'
-        replace: 'seeds: "{{ ip.stdout }}:7000"'
 
     - name: Permit traffic for storage and native transport ports
       ansible.posix.firewalld:

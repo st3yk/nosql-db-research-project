@@ -16,7 +16,7 @@ xpack.security.http.ssl:
 xpack.security.transport.ssl:
   enabled: false
 
-cluster.name: jbt-elastic
+cluster.name: jbt-cluster
 cluster.initial_master_nodes:
   - db-vm-1
 node.name: ${HOSTNAME}
