@@ -12,6 +12,7 @@ user@host:~/research-project/db-provisioning$ vagrant ssh db-vm-1
 ```shell
 user@host:~/research-project/db-provisioning$ ansible-playbook -i inventory.yaml playbooks/install-mongo.yaml
 user@host:~/research-project/db-provisioning$ ansible-playbook -i inventory.yaml playbooks/setup-mongo-replicaset.yaml
+# ssh to one member of the cluster and run 'cfgs/iniate_mongo_rs' inside mongosh
 ```
 ### Install Cassandra
 ```shell
