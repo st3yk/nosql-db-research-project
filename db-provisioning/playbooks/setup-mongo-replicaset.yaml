@@ -21,7 +21,7 @@
         mode: "0644"
 
     - name: Get node IP addr
-      ansible.builtin.shell: set -o pipefail && ip a l eth1 | awk '/inet / { print $2 }' | awk -F '/' '{ print $1 }'
+      ansible.builtin.shell: set -o pipefail && ip a l eno1 | awk '/inet / { print $2 }' | awk -F '/' '{ print $1 }'
       register: ip
       changed_when: false
 
