@@ -1,5 +1,8 @@
-pilot-study/mongo-data
+pilot-study/Mongo/mongo-data
 .vscode
 **/.vagrant
 **/*.swp
 **/elastic_token
+**/[Bb]in/
+**/[Oo]bj/
+**/*.csproj
