@@ -101,5 +101,22 @@ namespace Generator
             Console.WriteLine($"Average delay: {watch.Elapsed.TotalSeconds/no_reads} seconds per read.");
         }
     
+        static void AggregationTest(int n, DateTime start, DateTime end){
+            var watch = new System.Diagnostics.Stopwatch();
+            Console.WriteLine($"Starting aggregation test with {n} querries ({start} - {end}...)");
+            var filter_builder = Builders<TimeSeries>.Filter;
+            var range_query = filter_builder.Gte(x => x.timestamp, start) & filter_builder.Lte(x => x.timestamp, end);
+            watch.Start();
+            for (int i = 0; i < n; i++){
+                var db = clients[0].GetDatabase("benchmark");
+                var collection = db.GetCollection<TimeSeries>("metrics");
+                collection.Aggregate<TimeSeries>().Match(range_query)
+                .Group(g => new { Id = 1 }, // Group by a constant value (1) or any specific field
+                    g => new { AvgField1 = g.Average(x => x.data.field1) });//g.Average(x => x.Field1) });
+            }
+            watch.Stop();
+            Console.WriteLine($"Test finished after {watch.Elapsed.TotalSeconds}seconds.");
+            Console.WriteLine($"Average delay: {watch.Elapsed.TotalSeconds/n} seconds per read.");
+        }
     }
 }

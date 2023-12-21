@@ -4,7 +4,7 @@ using MongoDB.Bson.Serialization;
 namespace Models{
     public class Data{
         [BsonElement("field1")]
-        public string field1 {get; set;}
+        public double field1 {get; set;}
         [BsonElement("field2")]
         public string field2 {get; set;}
         [BsonElement("field3")]
