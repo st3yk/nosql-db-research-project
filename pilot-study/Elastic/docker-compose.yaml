@@ -1,0 +1,17 @@
+version: '3.6'
+services:
+  Elasticsearch:
+    image: elasticsearch:7.16.2 # we use 8.11, but it requires certs so 7.16 should be alright for tests
+    container_name: elasticsearch # default creds: elastic, changeme [SHOULD BE AT LEAST]
+    restart: always
+    volumes:
+    - elastic_data:/usr/share/elasticsearch/data/
+    - /etc/timezone/:/etc/timezone/
+    environment:
+      ES_JAVA_OPTS: "-Xmx256m -Xms256m"
+      discovery.type: single-node
+    ports:
+    - '9200:9200'
+    - '9300:9300'
+    networks:
+      - elk
