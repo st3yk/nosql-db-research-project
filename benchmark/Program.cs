@@ -34,8 +34,8 @@ namespace Generator
             ResetDB();
             CreateTSCollection();
             BulkLoad(10_000);
-            ReadTest(1_000);
-            AggregationTest(100, false);
+            ThreadingReadTest(1_000);
+            //AggregationTest(100, false);
             // ReadTest(1_000_000,0);
             //watch.Stop();
             //Console.WriteLine(watch.ElapsedMilliseconds);
@@ -116,7 +116,33 @@ namespace Generator
             return testData;
         }
 
-       static void ReadTest(int no_reads){
+        static void ThreadingReadTestFun(object _params){
+            Tuple<IMongoDatabase, int> p = (Tuple<IMongoDatabase, int>)_params;
+            IMongoDatabase db = p.Item1;
+            int no_reads = p.Item2;
+            var watch = new System.Diagnostics.Stopwatch();
+            Console.WriteLine($"Starting read test with {no_reads} reads...");
+            double time_sum = 0;
+            for (int i = 0; i < no_reads; i++){
+                var collection = db.GetCollection<Record>("metrics");
+                var filter = Builders<Record>.Filter.Eq(x=>x.BSData.bs_id, new Random().Next(3));
+
+                watch.Restart();
+                var doc = collection.Find<Record>(filter).First();
+                watch.Stop();
+            }
+            Console.WriteLine($"Test finished after {watch.Elapsed.TotalSeconds}seconds.");
+            Console.WriteLine($"Average ops/s: {no_reads/watch.Elapsed.TotalSeconds}.");
+        }
+        static void ThreadingReadTest(int no_reads){
+            Thread t1 = new Thread(new ParameterizedThreadStart(ThreadingReadTestFun));
+            Thread t2 = new Thread(new ParameterizedThreadStart(ThreadingReadTestFun));
+            Thread t3 = new Thread(new ParameterizedThreadStart(ThreadingReadTestFun));
+            t1.Start(Tuple.Create(clients[0].GetDatabase("benchmark"), no_reads));
+            t1.Start(Tuple.Create(clients[1].GetDatabase("benchmark"), no_reads));
+            t1.Start(Tuple.Create(clients[2].GetDatabase("benchmark"), no_reads));
+        }
+        static void ReadTest(int no_reads){
             var watch = new System.Diagnostics.Stopwatch();
             Console.WriteLine($"Starting read test with {no_reads} reads...");
             double time_sum = 0;
@@ -128,15 +154,14 @@ namespace Generator
                 watch.Restart();
                 var doc = collection.Find<Record>(filter).First();
                 watch.Stop();
-                time_sum += watch.Elapsed.TotalSeconds;
             }
-            Console.WriteLine($"Test finished after {time_sum}  seconds.");
-            Console.WriteLine($"Average ops/s: {no_reads/time_sum}.");
+            Console.WriteLine($"Test finished after {watch.Elapsed.TotalSeconds}seconds.");
+            Console.WriteLine($"Average ops/s: {no_reads/watch.Elapsed.TotalSeconds}.");
         }
         static void AggregationTest(int n, bool two_weeks){
             var watch = new System.Diagnostics.Stopwatch();
             var end_date = two_weeks ? start_date.AddDays(14):start_date.AddDays(7);
-            Console.WriteLine($"Starting aggregation test with {n} queries ({start_date} - {end_date}...)");
+            Console.WriteLine($"Starting aggregation test with {n} querries ({start_date} - {end_date}...)");
             var filter_builder = Builders<Record>.Filter;
             var query = filter_builder.Gte(x => x.timestamp, start_date) & filter_builder.Lte(x => x.timestamp, end_date) & filter_builder.Exists(x => x.UEData);
             double time_sum = 0;
@@ -151,10 +176,9 @@ namespace Generator
                 watch.Restart();
                 var res = q.ToList();
                 watch.Stop();
-                time_sum += watch.Elapsed.TotalSeconds;
             }
-            Console.WriteLine($"Test finished after {time_sum} seconds.");
-            Console.WriteLine($"Average ops/s: {n/time_sum}.");
+            Console.WriteLine($"Test finished after {watch.Elapsed.TotalSeconds}seconds.");
+            Console.WriteLine($"Average ops/s: {n/watch.Elapsed.TotalSeconds}.");
         }
 
     }
