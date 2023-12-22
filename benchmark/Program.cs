@@ -11,17 +11,20 @@ namespace Generator
     class Generator {
         private static List<string> contactPoints = [];
         private static List<MongoClient> clients = [];
-        private static List<IMongoCollection<TimeSeries>> collections = [];
+        private static List<IMongoCollection<Record>> collections = [];
+        private static DateTime start_date;
         static void Main(string[] args)
         {
+
+            start_date = DateTime.ParseExact("20230501T00:00:00Z", "yyyyMMddTHH:mm:ssZ", System.Globalization.CultureInfo.InvariantCulture).ToUniversalTime();
             ParseArgs(args);
             Connect();
-            var watch = new System.Diagnostics.Stopwatch();
-            //watch.Start();
-            ResetDB();
-            CreateTSCollection();
-            BulkLoad(100);
-            ReadTest(1_000_000,0);
+            //ResetDB();
+            //CreateTSCollection();
+            //BulkLoad(1_000);
+            //ReadTest(100);
+            AggregationTest(1, false);
+            // ReadTest(1_000_000,0);
             //watch.Stop();
             //Console.WriteLine(watch.ElapsedMilliseconds);
            
@@ -61,62 +64,83 @@ namespace Generator
             clients[0].GetDatabase("benchmark").CreateCollection("metrics", new CreateCollectionOptions { TimeSeriesOptions = new TimeSeriesOptions("timestamp", "data") });
         }
         static void BulkLoad(int n){
-            var data = GenerateTestData(n, DateTime.UtcNow);
+            var data = GenerateTestData(n, start_date);
             using (var session = clients[0].StartSession()){
                 var db = clients[0].GetDatabase("benchmark");
-                db.GetCollection<TimeSeries>("metrics").InsertMany(data);
+                db.GetCollection<Record>("metrics").InsertMany(data);
             }
         }
-        static List<TimeSeries> GenerateTestData(int count, DateTime start){
-            var testData = new List<TimeSeries>();
-           
+        static List<Record> GenerateTestData(int count, DateTime start){
+            var testData = new List<Record>();
+            var random = new Random();
+            Record r;
             for (var i = 0; i < count; i++){
-               
-                var r = new TimeSeries { 
-                    timestamp = start.AddSeconds(i).ToUniversalTime(), 
-                    data = new Data{
-                        field1 = "tcp", 
-                        field2 = "192.168.0.1", 
-                        field3 = "192.168.0.2"
-                        } 
-                    };
-                testData.Add(r);
+              
+                for (int bs_id = 0; bs_id < 3; bs_id++){
+                        r = new Record { 
+                        timestamp = start.AddSeconds(i).ToUniversalTime(), 
+                        BSData = new BSData{
+                                bs_id = bs_id
+                            } 
+                        };
+                    testData.Add(r);
+                    for (int ue_id = 0; ue_id < 5; ue_id++){
+                            r = new Record { 
+                            timestamp = start.AddSeconds(i).ToUniversalTime(), 
+                            UEData = new UEData{
+                                    ue_id = ue_id,
+                                    pci = bs_id 
+                                } 
+                        };
+                        testData.Add(r);  
+                    }
+                }
+                
+                
+                
             }
 
             return testData;
         }
 
-        static void ReadTest(int no_reads, int no_threads){
+       static void ReadTest(int no_reads){
             var watch = new System.Diagnostics.Stopwatch();
             Console.WriteLine($"Starting read test with {no_reads} reads...");
-            watch.Start();
+            double time_sum = 0;
             for (int i = 0; i < no_reads; i++){
                 var db = clients[0].GetDatabase("benchmark");
-                var collection = db.GetCollection<TimeSeries>("metrics");
-                var filter = Builders<TimeSeries>.Filter.Eq(x=>x.data.field1, "tcp");
-                var doc = collection.Find<TimeSeries>(filter).First();
+                var collection = db.GetCollection<Record>("metrics");
+                var filter = Builders<Record>.Filter.Eq(x=>x.BSData.bs_id, new Random().Next(3));
+                watch.Start();
+                var doc = collection.Find<Record>(filter).First();
+                watch.Stop();
+                time_sum += watch.Elapsed.TotalSeconds;
             }
-            watch.Stop();
-            Console.WriteLine($"Test finished after {watch.Elapsed.TotalSeconds}seconds.");
-            Console.WriteLine($"Average delay: {watch.Elapsed.TotalSeconds/no_reads} seconds per read.");
+            Console.WriteLine($"Test finished after {time_sum}seconds.");
+            Console.WriteLine($"Average ops/s: {no_reads/time_sum} seconds per read.");
         }
-    
-        static void AggregationTest(int n, DateTime start, DateTime end){
+        static void AggregationTest(int n, bool two_weeks){
             var watch = new System.Diagnostics.Stopwatch();
-            Console.WriteLine($"Starting aggregation test with {n} querries ({start} - {end}...)");
-            var filter_builder = Builders<TimeSeries>.Filter;
-            var range_query = filter_builder.Gte(x => x.timestamp, start) & filter_builder.Lte(x => x.timestamp, end);
-            watch.Start();
+            var end_date = two_weeks ? start_date.AddDays(14):start_date.AddDays(7);
+            Console.WriteLine($"Starting aggregation test with {n} querries ({start_date} - {end_date}...)");
+            var filter_builder = Builders<Record>.Filter;
+            var query = filter_builder.Gte(x => x.timestamp, start_date) & filter_builder.Lte(x => x.timestamp, end_date) & filter_builder.Exists(x => x.UEData);
+            double time_sum = 0;
             for (int i = 0; i < n; i++){
                 var db = clients[0].GetDatabase("benchmark");
-                var collection = db.GetCollection<TimeSeries>("metrics");
-                collection.Aggregate<TimeSeries>().Match(range_query)
-                .Group(g => new { Id = 1 }, // Group by a constant value (1) or any specific field
-                    g => new { AvgField1 = g.Average(x => x.data.field1) });//g.Average(x => x.Field1) });
+                var collection = db.GetCollection<Record>("metrics");
+                watch.Start();
+                var res = collection.Aggregate<Record>()
+                .Match(query)
+                .Group(g => g.UEData.pci, // Group by a constant value (1) or any specific field
+                    g => new { avg = g.Average(x => x.UEData.dlul_brate) }).ToBsonDocument();//g.Average(x => x.Field1) });
+                watch.Stop();
+                Console.WriteLine(res);
+                time_sum += watch.Elapsed.TotalSeconds;
             }
-            watch.Stop();
-            Console.WriteLine($"Test finished after {watch.Elapsed.TotalSeconds}seconds.");
-            Console.WriteLine($"Average delay: {watch.Elapsed.TotalSeconds/n} seconds per read.");
+            Console.WriteLine($"Test finished after {time_sum}seconds.");
+            Console.WriteLine($"Average delay: {time_sum/n} seconds per read.");
         }
+
     }
 }
