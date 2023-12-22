@@ -130,13 +130,13 @@ namespace Generator
                 watch.Stop();
                 time_sum += watch.Elapsed.TotalSeconds;
             }
-            Console.WriteLine($"Test finished after {time_sum}seconds.");
+            Console.WriteLine($"Test finished after {time_sum}  seconds.");
             Console.WriteLine($"Average ops/s: {no_reads/time_sum}.");
         }
         static void AggregationTest(int n, bool two_weeks){
             var watch = new System.Diagnostics.Stopwatch();
             var end_date = two_weeks ? start_date.AddDays(14):start_date.AddDays(7);
-            Console.WriteLine($"Starting aggregation test with {n} querries ({start_date} - {end_date}...)");
+            Console.WriteLine($"Starting aggregation test with {n} queries ({start_date} - {end_date}...)");
             var filter_builder = Builders<Record>.Filter;
             var query = filter_builder.Gte(x => x.timestamp, start_date) & filter_builder.Lte(x => x.timestamp, end_date) & filter_builder.Exists(x => x.UEData);
             double time_sum = 0;
@@ -153,7 +153,7 @@ namespace Generator
                 watch.Stop();
                 time_sum += watch.Elapsed.TotalSeconds;
             }
-            Console.WriteLine($"Test finished after {time_sum}seconds.");
+            Console.WriteLine($"Test finished after {time_sum} seconds.");
             Console.WriteLine($"Average ops/s: {n/time_sum}.");
         }
 
