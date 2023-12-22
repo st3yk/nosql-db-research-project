@@ -40,7 +40,7 @@ public class ParallelDataGenerator<T>
         lock (lockObject)
         {
             for(int index = 0; index < this.threadCount; index++){
-                Console.WriteLine($"Sent signal to stop to thread id: {index}");
+                //Console.WriteLine($"Sent signal to stop to thread id: {index}");
                 this.threadControl[index] = 1;
             }
             Monitor.PulseAll(this.lockObject);
@@ -60,7 +60,7 @@ public class ParallelDataGenerator<T>
     }
     private void Worker(int index)
     {
-        Console.WriteLine($"Thread id: {index} started");
+        //Console.WriteLine($"Thread id: {index} started");
         bool flag = true;
         while (flag)
         {
@@ -77,7 +77,7 @@ public class ParallelDataGenerator<T>
                     }
 
                     if(this.dataControl[index] == 0){
-                        Console.WriteLine($"Thread id: {index} saves data");
+                        //Console.WriteLine($"Thread id: {index} saves data");
                         this.arrayOfData[index] = newData;
                         this.dataControl[index] = 1;
                         Monitor.Pulse(this.lockObject); 
@@ -106,7 +106,7 @@ public class ParallelDataGenerator<T>
                     {                       
                         result = this.arrayOfData[index];
                         this.dataControl[index] = 0;
-                        Console.WriteLine($"Get: returning list of index {index}");
+                        //Console.WriteLine($"Get: returning list of index {index}");
                         Monitor.Pulse(this.lockObject);
                         return result;
                     }
