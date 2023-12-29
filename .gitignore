@@ -5,3 +5,4 @@ pilot-study/Mongo/mongo-data
 **/elastic_token
 **/[Bb]in/
 **/[Oo]bj/
+**/*.txt

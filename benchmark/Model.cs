@@ -75,13 +75,13 @@ namespace Models{
         [JsonPropertyName("ue_data")]
         [BsonIgnoreIfNull]
         [BsonElement("ue_data")]
-        public UEData? UEData {get; set;}
+        public UEData? ue_data {get; set;}
         
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("bs_data")]
         [BsonIgnoreIfNull]
         [BsonElement("bs_data")]
-        public BSData? BSData {get; set;}
+        public BSData? bs_data {get; set;}
         [JsonPropertyName("timestamp")]
         public DateTime timestamp {get; set;}
     }
