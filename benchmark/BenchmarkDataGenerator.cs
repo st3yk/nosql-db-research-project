@@ -51,15 +51,17 @@ public class BenchmarkDataGenerator{
         for (int chunkIdx = 0; chunkIdx < this.chunkCount; chunkIdx++){
             List<Record> data = new List<Record>();
             for (int dt = chunkIdx * this.chunkSize; dt < (chunkIdx+1) * this.chunkSize && dt < this.timePointsCount; dt++){
-                timeStamp = startTime.AddSeconds(dt*5);
+                timeStamp = timeStamp.AddSeconds(1);
                 // data for each base station
                 for (int bs_id = 0; bs_id < 3; bs_id++){
-                    // data.Add(new Record{
-                    //     timestamp = timeStamp.ToUniversalTime(),
-                    //     bs_data = new BSData{
-                    //         bs_id = bs_id
-                    //     }
-                    // });
+                    
+                    data.Add(new Record{
+                        timestamp = timeStamp.ToUniversalTime(),
+                        bs_data = new BSData{
+                            bs_id = bs_id
+                        }
+                    });
+                    
                     // data for each user belonging to the base station
                     for (int ue_id = 0; ue_id < 5; ue_id++){
                         data.Add(new Record{

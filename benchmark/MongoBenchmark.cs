@@ -98,7 +98,7 @@ public class MongoBenchmark : IDatabaseBenchmark{
                  g => new { avg = g.Average(x => x.ue_data.dlul_brate) });
                 
             
-            Console.WriteLine(q);
+            //Console.WriteLine(q);
             //var test = collection.Find(dateRangeFilter);
             watch.Start();
             var res = q.ToCursor();
@@ -110,7 +110,6 @@ public class MongoBenchmark : IDatabaseBenchmark{
         Console.WriteLine($"Total time for {queryCount} queries: {watch.Elapsed.TotalSeconds} seconds.");
         Console.WriteLine($"Ops/second: {queryCount / watch.Elapsed.TotalSeconds}.\n");
         Console.WriteLine($"Starting aggregation test with {queryCount} querries ({startTime} - {endTimeTwoWeeks}...)");
-        return;
         dateRangeFilter = filter_builder.Gte(x => x.timestamp, startTime) & filter_builder.Lte(x => x.timestamp, endTimeTwoWeeks) & filter_builder.Exists(x => x.ue_data);
         watch.Reset();
         for (int i = 0; i < queryCount; i++){
@@ -120,7 +119,7 @@ public class MongoBenchmark : IDatabaseBenchmark{
                 .Group(g => g.ue_data.pci,
                 g => new { avg = g.Average(x => x.ue_data.dlul_brate) });
             watch.Start();
-            var res = q.ToList();
+            var res = q.ToCursor();
             watch.Stop();
             if(i%1_000 == 0 && i != 0) Console.WriteLine($"Finished {i} queries...");
         }

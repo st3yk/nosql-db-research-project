@@ -119,15 +119,15 @@ namespace Benchmark
             //MongoBenchmark benchmark = new MongoBenchmark("mongodb://root:pass@localhost:27017/");
             MongoBenchmark benchmark = new MongoBenchmark(connectionString, DateTime.UtcNow);
             
-            //benchmark.ResetDB();
-            //benchmark.SetupDB();
-            //benchmark.BulkLoad(250_000, 10_000);
-            for (int i = 0; i < 1; i++){
+            benchmark.ResetDB();
+            benchmark.SetupDB();
+            benchmark.BulkLoad(250_000, 50_000);
+            for (int i = 0; i < 5; i++){
                 Thread.Sleep(500);   
             //benchmark.ResetDB();
             //benchmark.SetupDB();
             //benchmark.BulkLoad(100_000, 10_000);
-                benchmark.AggregationTest(1);
+                benchmark.AggregationTest(3);
             }
             //benchmark.SequentialReadTest(10_000);
             //benchmark.AggregationTest(100_000);
@@ -139,8 +139,24 @@ namespace Benchmark
                 new Uri("http://db-vm-2.jbt.pl:9200"),
                 new Uri("http://db-vm-3.jbt.pl:9200")
             };
-            ElasticBenchmark benchmark = new ElasticBenchmark(nodes, DateTime.UtcNow);
+            //ElasticBenchmark benchmark = new ElasticBenchmark(nodes, DateTime.UtcNow);
+            ElasticBenchmark benchmark = new ElasticBenchmark(nodes[0], DateTime.UtcNow);
+            //return;
+            //benchmark.ResetDB();
+            //benchmark.SetupDB();
+            //benchmark.BulkLoad(25_000, 5_000);
+            /*
+            for (int i = 0; i < 1; i++){
+                Thread.Sleep(500);   
+            //benchmark.ResetDB();
+            //benchmark.SetupDB();
+            //benchmark.BulkLoad(100_000, 10_000);
+                benchmark.AggregationTest(3);
+            }
+            */
+            
             foreach (var timePointsCount in new int[]{1000, 10000, 100000}){
+                
                 for (int i = 0; i < 5; i++){
                 benchmark.ResetDB();
                 benchmark.SetupDB();
@@ -151,7 +167,10 @@ namespace Benchmark
                         benchmark.SequentialReadTest(readCount);
                     }
                 }
+            
+
             }
+            
             
             //benchmark.ResetDB();
             //benchmark.SetupDB();
