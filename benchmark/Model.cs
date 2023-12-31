@@ -1,65 +1,63 @@
-using MongoDB.Bson.Serialization.Attributes;
-using MongoDB.Bson.Serialization;
 
-namespace Models{
-    public class UEData{
-        
-        [BsonElement("ue_id")]
-        public int ue_id {get; set;}
-        [BsonElement("cc")]
-        public int cc {get; set;} = 0;
-        
-        [BsonElement("pci")]
-        public int pci {get; set;}
+using Cassandra;
+using Cassandra.Mapping;
+using Cassandra.Mapping.Attributes;
 
-        [BsonElement("earfcn")]
-        public int earfcn {get; set;} = 3400;
+public class Table{}
+[Table("UEDATA")]
 
-        [BsonElement("rsrp")]
-        public int rsrp {get; set;} = new Random().Next(-80, -40);
+public class UEData : Table{
+    
+    [ClusteringKey(0)]
 
-        [BsonElement("pl")]
-        public int pl {get; set;} = new Random().Next(40, 80);
+    public Guid guid  {get; set;}
+    
+    [ClusteringKey(1)]
+    public DateTimeOffset timestamp_column {get; set;}
 
-        [BsonElement("cfo")]
-        public double cfo {get; set;} = new Random().NextDouble() * -1_000;
+    [PartitionKey(0)]
 
-        [BsonElement("dlul_mcs")]
-        public double dlul_mcs {get; set;} = new Random().NextDouble() * 20;
+    public int ue_id {get; set;}
 
-        [BsonElement("dlul_brate")]
-        public double dlul_brate {get; set;} = new Random().NextDouble() * 50_000;
+    public int cc {get; set;} = 0;
+    public int pci {get; set;}
 
-        [BsonElement("dlul_bler")]
-        public double dlul_bler {get; set;} = new Random().NextDouble() * 100;
+    public int earfcn {get; set;} = 3400;
 
-        [BsonElement("dl_snr")]
-        public double dl_snr {get; set;} = new Random().NextDouble() * 5 + 10;
+    public int rsrp {get; set;} = new Random().Next(-80, -40);
 
-        [BsonElement("ul_buff")]
-        public double ul_buff {get; set;} = new Random().NextDouble() * 100;
+    public int pl {get; set;} = new Random().Next(40, 80);
 
-    }
+    public double cfo {get; set;} = new Random().NextDouble() * -1_000;
 
-    public class BSData{
-        [BsonElement("bs_id")]
-        public int bs_id {get; set;}
+    public double dlul_mcs {get; set;} = new Random().NextDouble() * 20;
 
-        [BsonElement("nof_ue")]
-        public int nof_ue {get; set;} = 5;
-        [BsonElement("dlul_brate")]
-        public double dlul_brate {get; set;} = new Random().NextDouble() * 1_500_000 + 500_000;
-    }
+    public double dlul_brate {get; set;} = new Random().NextDouble() * 50_000;
 
-    [BsonIgnoreExtraElements]
-    public class Record{
+    public double dlul_bler {get; set;} = new Random().NextDouble() * 100;
 
-        [BsonIgnoreIfNull]
-        [BsonElement("ue_data")]
-        public UEData? UEData {get; set;}
-        [BsonIgnoreIfNull]
-        [BsonElement("bs_data")]
-        public BSData? BSData {get; set;}
-        public DateTime timestamp {get; set;}
-    }
+    public double dl_snr {get; set;} = new Random().NextDouble() * 5 + 10;
+
+    public double ul_buff {get; set;} = new Random().NextDouble() * 100;
+    
+
+}
+
+[Table("BSDATA")]
+
+
+public class BSData : Table{
+
+    [PartitionKey(0)]
+
+    public Guid guid  {get; set;}
+
+    [ClusteringKey(0)]
+
+    public DateTimeOffset timestamp_column {get; set;}
+
+    [ClusteringKey(1)]
+    public int bs_id {get; set;}
+    public int nof_ue {get; set;} = 5;
+    public double dlul_brate {get; set;} = new Random().NextDouble() * 1_500_000 + 500_000;
 }
