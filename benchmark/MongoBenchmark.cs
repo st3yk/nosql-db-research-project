@@ -8,20 +8,24 @@ public class MongoBenchmark : IDatabaseBenchmark{
 
     private MongoClient client;
     private DateTime startTime;
+    private StreamWriter outSW;
     public MongoBenchmark(string connectionString, DateTime _startTime){
         this.client = new MongoClient(connectionString);
         this.startTime = _startTime;
         this.RegisterDataModels();
+        this.outSW = File.AppendText("mongo_cluster.txt");
+        this.outSW.AutoFlush = true;
+    }
+    ~MongoBenchmark(){
+        outSW.Close();
     }
     public void SetupDB(){
         Console.WriteLine("Setting up the DB...");
         CreateCollectionOptions options = new CreateCollectionOptions{TimeSeriesOptions = new TimeSeriesOptions("timestamp")};
         this.client.GetDatabase("benchmark").CreateCollection("metrics", options);
         var model = new CreateIndexModel<Record>("{timestamp: 1}");
-        var model1 = new CreateIndexModel<Record>("{timestamp: -1}");
-        var model2 = new CreateIndexModel<Record>("{\"ue_data.pci\": 1}");
         
-        this.client.GetDatabase("benchmark").GetCollection<Record>("metrics").Indexes.CreateMany([model, model2]);
+        this.client.GetDatabase("benchmark").GetCollection<Record>("metrics").Indexes.CreateOne(model);
         Console.WriteLine("DB setup finished.\n");
     }
     public void ResetDB(){
@@ -42,41 +46,52 @@ public class MongoBenchmark : IDatabaseBenchmark{
         }
         Console.WriteLine();
     }
-    public void BulkLoad(int timePointsCount, int chunkSize){
-        Console.WriteLine($"Bulk loading {timePointsCount*18} records in chunks of {chunkSize*18}...");
+    public void BulkLoad(int timePointsCount, int chunkSize = -1){
+        Console.WriteLine($"Bulk loading {timePointsCount*18} records");
+        outSW.WriteLine($"Bulk loading {timePointsCount*18} records");
         BenchmarkDataGenerator gen = new BenchmarkDataGenerator(chunkSize, timePointsCount, startTime);
+        var records = gen.GenerateData();
         var collection = this.client.GetDatabase("benchmark").GetCollection<Record>("metrics"); 
         var watch1 = new Stopwatch();
         var watch2 = new Stopwatch();
-        int chunkNumber = 1;
+        int recordNumber = 1;
         watch1.Start();
-        foreach (var data in gen.GetDataChunk()){
-            Console.WriteLine($"{100.0*chunkNumber/gen.chunkCount:0.00}%");
+        foreach (var record in records){
+            if(recordNumber%1_000 == 0 && recordNumber != 0) Console.WriteLine($"{100.0*recordNumber/timePointsCount:0.00}%");
             watch2.Start();
-            collection.InsertMany(data);
+            collection.InsertOne(record);
             watch2.Stop();
-            chunkNumber += 1;
+            recordNumber += 1;
         }
         watch1.Stop();
         Console.WriteLine("Bulk loading finished.\n");
         Console.WriteLine($"Total time including generating data: {watch1.Elapsed.TotalSeconds}");
         Console.WriteLine($"Total time only inserting data: {watch2.Elapsed.TotalSeconds}");
+        
+        outSW.WriteLine("Bulk loading finished.");
+        //Console.WriteLine($"Total time including generating data: {watch1.Elapsed.TotalSeconds}");
+        outSW.WriteLine($"Total time only inserting data: {watch2.Elapsed.TotalSeconds}\n");    
     }
     public void SequentialReadTest(int readCount){
         Console.WriteLine($"Starting sequential read test for {readCount} reads...");
+        outSW.WriteLine($"Starting sequential read test for {readCount} reads...");
         Stopwatch watch = new System.Diagnostics.Stopwatch();
         IMongoCollection<Record> collection = this.client.GetDatabase("benchmark").GetCollection<Record>("metrics");
         FilterDefinition<Record> filter;
         for (int i = 0; i < readCount; i++){
             filter = Builders<Record>.Filter.Eq(x => x.bs_data.bs_id, new Random().Next(3));
+            var req = collection.Find(filter).Limit(1);
             watch.Start();
-            var doc = collection.Find(filter).First();
+            var doc = req.First();
             watch.Stop();
-            if(i%10_000 == 0 && i != 0) Console.WriteLine($"Finished {i} reads...");
+            if(i%1000 == 0 && i != 0) Console.WriteLine($"Finished {i} reads...");
         }
         Console.WriteLine("Sequential read test finished.");
         Console.WriteLine($"Total time for {readCount} reads: {watch.Elapsed.TotalSeconds} seconds.");
         Console.WriteLine($"Ops/second: {readCount / watch.Elapsed.TotalSeconds}.\n");
+        outSW.WriteLine($"Sequential read test: {readCount} reads.");
+        outSW.WriteLine($"Total time for {readCount} reads: {watch.Elapsed.TotalSeconds} seconds.");
+        outSW.WriteLine($"Ops/second: {readCount / watch.Elapsed.TotalSeconds}.\n");
 
     }
     public void AggregationTest(int queryCount){
@@ -94,15 +109,19 @@ public class MongoBenchmark : IDatabaseBenchmark{
             var q = collection.Aggregate()
                 .Match(dateRangeFilter)
                 .Match(existsFilter)
-                .Group(g => g.ue_data.pci,
+                .Group(r => new {},
                  g => new { avg = g.Average(x => x.ue_data.dlul_brate) });
                 
             
-            //Console.WriteLine(q);
+            Console.WriteLine(q);
             //var test = collection.Find(dateRangeFilter);
             watch.Start();
-            var res = q.ToCursor();
+            var res = q.ToList();
             watch.Stop();
+            foreach (var item in res)
+            {
+                Console.WriteLine(item);
+            }
             if(i%1_000 == 0 && i != 0) Console.WriteLine($"Finished {i} queries...");
         }
 

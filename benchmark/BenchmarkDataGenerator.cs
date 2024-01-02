@@ -13,9 +13,10 @@ public class BenchmarkDataGenerator{
         if(_timePointsCount%_chunkSize != 0) this.chunkCount += 1;
         this.startTime = _startTime; 
     }
-    public static List<Record> GenerateData(int timePointsCount, DateTime startTime){
+    public List<Record> GenerateData(){
         List<Record> data = new List<Record>();
         Random random = new Random();
+        DateTime timestamp = startTime;
         Console.WriteLine($"Started generating {timePointsCount*18} records...");
         for (int dt = 0; dt < timePointsCount; dt++){
             // data for each base station
@@ -38,6 +39,7 @@ public class BenchmarkDataGenerator{
                 }
             }
             
+            timestamp = timestamp.AddSeconds(1);
             if(dt%1_000 == 0 && dt != 0) Console.WriteLine($"{dt*18} records generated...");
         }
         Console.WriteLine("Generating finished.\n");
@@ -48,6 +50,7 @@ public class BenchmarkDataGenerator{
     public IEnumerable<List<Record>> GetDataChunk(){
         Random random = new Random();
         DateTime timeStamp = startTime;
+        Console.WriteLine(timeStamp.ToUniversalTime());
         for (int chunkIdx = 0; chunkIdx < this.chunkCount; chunkIdx++){
             List<Record> data = new List<Record>();
             for (int dt = chunkIdx * this.chunkSize; dt < (chunkIdx+1) * this.chunkSize && dt < this.timePointsCount; dt++){
@@ -77,6 +80,7 @@ public class BenchmarkDataGenerator{
             yield return data;
         }
         
+        Console.WriteLine(timeStamp.ToUniversalTime());       
     }
 
 }
