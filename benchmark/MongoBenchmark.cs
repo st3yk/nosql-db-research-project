@@ -13,7 +13,7 @@ public class MongoBenchmark : IDatabaseBenchmark{
         this.client = new MongoClient(connectionString);
         this.startTime = _startTime;
         this.RegisterDataModels();
-        this.outSW = File.AppendText("mongo_cluster.txt");
+        this.outSW = File.AppendText("mongo_standalone.txt");
         this.outSW.AutoFlush = true;
     }
     ~MongoBenchmark(){
@@ -35,31 +35,28 @@ public class MongoBenchmark : IDatabaseBenchmark{
         if(!BsonClassMap.IsClassMapRegistered(typeof(UEData))){
                 Console.WriteLine($"Registering {typeof(UEData)} classmap.");
                 BsonClassMap.RegisterClassMap<UEData>();
-            }
-        if(!BsonClassMap.IsClassMapRegistered(typeof(BSData))){
-            Console.WriteLine($"Registering {typeof(BSData)} classmap.");
-            BsonClassMap.RegisterClassMap<BSData>();
         }
+       
         if(!BsonClassMap.IsClassMapRegistered(typeof(Record))){
             Console.WriteLine($"Registering {typeof(Record)} classmap.");
             BsonClassMap.RegisterClassMap<Record>();
         }
         Console.WriteLine();
     }
-    public void BulkLoad(int timePointsCount, int chunkSize = -1){
+    public void SequentionalWriteTest(int timePointsCount){
         Console.WriteLine($"Bulk loading {timePointsCount*18} records");
         outSW.WriteLine($"Bulk loading {timePointsCount*18} records");
-        BenchmarkDataGenerator gen = new BenchmarkDataGenerator(chunkSize, timePointsCount, startTime);
-        var records = gen.GenerateData();
+        BenchmarkDataGenerator gen = new BenchmarkDataGenerator(-1, timePointsCount, startTime, 1);
+        
         var collection = this.client.GetDatabase("benchmark").GetCollection<Record>("metrics"); 
         var watch1 = new Stopwatch();
         var watch2 = new Stopwatch();
         int recordNumber = 1;
         watch1.Start();
-        foreach (var record in records){
+        foreach (var chunk in gen.GetTimepointChunk()){
             if(recordNumber%1_000 == 0 && recordNumber != 0) Console.WriteLine($"{100.0*recordNumber/timePointsCount:0.00}%");
             watch2.Start();
-            collection.InsertOne(record);
+            collection.InsertMany(chunk);
             watch2.Stop();
             recordNumber += 1;
         }
@@ -72,6 +69,19 @@ public class MongoBenchmark : IDatabaseBenchmark{
         //Console.WriteLine($"Total time including generating data: {watch1.Elapsed.TotalSeconds}");
         outSW.WriteLine($"Total time only inserting data: {watch2.Elapsed.TotalSeconds}\n");    
     }
+    public void BulkLoad(int timePointsCount, int chunkSize){
+    	Console.WriteLine($"Bulk loading {timePointsCount*18} records");
+	BenchmarkDataGenerator gen = new BenchmarkDataGenerator(chunkSize, timePointsCount, startTime, 1);
+	var collection = this.client.GetDatabase("benchmark").GetCollection<Record>("metrics");
+	int chunkNumber = 1;
+	foreach (var chunk in gen.GetDataChunk()){
+		Console.WriteLine($"{100.0*chunkNumber/gen.chunkCount}");
+		collection.InsertMany(chunk);
+		chunkNumber += 1;	
+	}
+	Console.WriteLine("Finished\n");
+    
+    }
     public void SequentialReadTest(int readCount){
         Console.WriteLine($"Starting sequential read test for {readCount} reads...");
         outSW.WriteLine($"Starting sequential read test for {readCount} reads...");
@@ -79,7 +89,7 @@ public class MongoBenchmark : IDatabaseBenchmark{
         IMongoCollection<Record> collection = this.client.GetDatabase("benchmark").GetCollection<Record>("metrics");
         FilterDefinition<Record> filter;
         for (int i = 0; i < readCount; i++){
-            filter = Builders<Record>.Filter.Eq(x => x.bs_data.bs_id, new Random().Next(3));
+            filter = Builders<Record>.Filter.Eq(x => x.ue_data.pci, new Random().Next(3));
             var req = collection.Find(filter).Limit(1);
             watch.Start();
             var doc = req.First();
@@ -116,12 +126,9 @@ public class MongoBenchmark : IDatabaseBenchmark{
             Console.WriteLine(q);
             //var test = collection.Find(dateRangeFilter);
             watch.Start();
-            var res = q.ToList();
+            var res = q.First();
             watch.Stop();
-            foreach (var item in res)
-            {
-                Console.WriteLine(item);
-            }
+	    Console.WriteLine(res);
             if(i%1_000 == 0 && i != 0) Console.WriteLine($"Finished {i} queries...");
         }
 
@@ -135,11 +142,12 @@ public class MongoBenchmark : IDatabaseBenchmark{
             var q = collection.Aggregate()
                 .Match(dateRangeFilter)
                 .Match(existsFilter)
-                .Group(g => g.ue_data.pci,
+                .Group(g => new {},
                 g => new { avg = g.Average(x => x.ue_data.dlul_brate) });
             watch.Start();
-            var res = q.ToCursor();
+            var res = q.First();
             watch.Stop();
+	    Console.WriteLine(res);
             if(i%1_000 == 0 && i != 0) Console.WriteLine($"Finished {i} queries...");
         }
 

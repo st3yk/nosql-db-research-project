@@ -4,7 +4,7 @@ using Nest;
 
 namespace Models{
         
-        [ElasticsearchType(Name = "ue_data")]
+    [ElasticsearchType(Name = "ue_data")]
     public class UEData{
         [Number(NumberType.Integer, Name = "ue_id")]
         [JsonPropertyName("ue_id")]
@@ -67,43 +67,15 @@ namespace Models{
 
     }
 
-    public class BSData{
-
-        [Number(NumberType.Integer, Name = "bs_id")]
-        [JsonPropertyName("bs_id")]
-        [BsonElement("bs_id")]
-        public int bs_id {get; set;}
-
-        [Number(NumberType.Integer, Name = "nof_ue")]
-        [JsonPropertyName("nof_ue")]
-        [BsonElement("nof_ue")]
-        public int nof_ue {get; set;} = 5;
-
-        [Number(NumberType.Double, Name = "dlul_brate")]
-        [JsonPropertyName("dlul_brate")]
-        [BsonElement("dlul_brate")]
-        public double dlul_brate {get; set;} = new Random().NextDouble() * 1_500_000 + 500_000;
-    }
-
-
     [ElasticsearchType(Name = "record")]
     [BsonIgnoreExtraElements]
     public class Record{
 
         [Object(Name = "ue_data")]
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("ue_data")]
-        [BsonIgnoreIfNull]
         [BsonElement("ue_data")]
-        public UEData? ue_data {get; set;}
-        
-        [Object(Name = "bs_data")]
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        [JsonPropertyName("bs_data")]
-        [BsonIgnoreIfNull]
-        [BsonElement("bs_data")]
-        public BSData? bs_data {get; set;}
-
+        public UEData ue_data {get; set;}
+       
         [Date(Name = "timestamp", Index = true)]
         [JsonPropertyName("timestamp")]
         public DateTime timestamp {get; set;}
