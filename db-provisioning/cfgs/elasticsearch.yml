@@ -22,9 +22,9 @@ cluster.initial_master_nodes:
 node.name: ${HOSTNAME}
 network.host: CHANGE_ME
 discovery.seed_hosts:
-   - db-vm-1.jbt.pl
-   - db-vm-2.jbt.pl
-   - db-vm-3.jbt.pl
+   - db-vm-1
+   - db-vm-2
+   - db-vm-3
 
 # Allow HTTP API connections from anywhere
 # Connections are encrypted and require user authentication

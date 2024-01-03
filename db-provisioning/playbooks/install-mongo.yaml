@@ -13,15 +13,15 @@
         gpgcheck: 1
         gpgkey: https://www.mongodb.org/static/pgp/server-6.0.asc
 
-    # - name: Install mongodb packages
-    #   ansible.builtin.yum:
-    #     name:
-    #       - mongodb-org-6.0.4
-    #       - mongodb-org-database-6.0.4
-    #       - mongodb-org-server-6.0.4
-    #       - mongodb-org-mongos-6.0.4
-    #       - mongodb-org-tools-6.0.4
-    #     state: present
+    - name: Install mongodb packages
+      ansible.builtin.yum:
+        name:
+          - mongodb-org-6.0.4
+          - mongodb-org-database-6.0.4
+          - mongodb-org-server-6.0.4
+          - mongodb-org-mongos-6.0.4
+          - mongodb-org-tools-6.0.4
+        state: present
 
     - name: Pin Mongo packages to fix db version
       ansible.builtin.lineinfile:
