@@ -44,7 +44,7 @@ namespace Benchmark
             
             benchmark.ResetDB();
             benchmark.SetupDB();
-            benchmark.SequentialWriteTest(1000, 1);
+            benchmark.SequentialWriteTest(50000, 1);
 
             // foreach (var timePointsCount in new int[]{1000, 10000, 100000}){
                 

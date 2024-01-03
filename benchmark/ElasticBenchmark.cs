@@ -56,21 +56,33 @@ public class ElasticBenchmark : IDatabaseBenchmark{
             //watch.Stop();
             recordNumber += 1;
         }
-        var res = await Task.WhenAll(searchTasks);	
-        foreach (var bulkResponse in res)
-        {
-            if (bulkResponse.IsValid)
+	int invalid = 0;
+        var task = Task.WhenAll(searchTasks).ContinueWith(t => {
+			watch.Stop();
+			Console.WriteLine($"Test finished after {watch.Elapsed.TotalSeconds}\n");
+			foreach(var res in t.Result){
+				if(res.Errors) invalid++;
+			}
+			Console.WriteLine($"Invalid: {invalid}");
+			});	
+        watch.Start();
+	task.Wait();
+	/*
+	var response = res[0];
+	Console.WriteLine(response);
+            if (response.IsValid)
             {
                 Console.WriteLine("IndexMany request successful.");
+		Console.WriteLine($"{response.DebugInformation}");
                 // Process the bulk response if needed
             }
             else
             {
-                Console.WriteLine($"Error indexing documents: {bulkResponse.DebugInformation}");
+                Console.WriteLine($"Error indexing documents: {response.DebugInformation}");
             }
-        }
-        outSW.WriteLine($"Write test of {timePointsCount*18} records finished.");
-        outSW.WriteLine($"Total time only inserting data: {watch.Elapsed.TotalSeconds}\n");
+        */
+        //outSW.WriteLine($"Write test of {timePointsCount*18} records finished.");
+        //outSW.WriteLine($"Total time only inserting data: {watch.Elapsed.TotalSeconds}\n");
         Console.WriteLine($"Write test finished after {watch.Elapsed.TotalSeconds} seconds");
     }
     public void BulkLoad(int timePointsCount, int chunkSize){

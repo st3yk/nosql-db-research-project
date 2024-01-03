@@ -30,7 +30,7 @@ public class BenchmarkDataGenerator{
                         chunk.Add(new Record{
                             timestamp = timeStamp.ToUniversalTime(),
                             ue_data = new UEData{
-                                ue_id = 3*bs_id + ue_id,
+                                ue_id = 5*bs_id + ue_id,
                                 pci = bs_id
                                 }
                         });
@@ -56,7 +56,7 @@ public class BenchmarkDataGenerator{
                         data.Add(new Record{
                             timestamp = timeStamp.ToUniversalTime(),
                             ue_data = new UEData{
-                                ue_id = 3*bs_id + ue_id,
+                                ue_id = 5*bs_id + ue_id,
                                 pci = bs_id
                             }
                         });
