@@ -31,7 +31,21 @@ namespace Benchmark
         static void StartMongoBenchmark(){
             string connectionString = "mongodb://db-vm-1:27017";
             MongoBenchmark benchmark = new MongoBenchmark(connectionString, DateTime.UtcNow, true);
-            foreach (var timePointsCount in new int[]{1000, 10000, 100000}){
+           
+	   
+	    benchmark.ResetDB();
+            benchmark.SetupDB();
+            //benchmark.BulkLoad(1_000, 1_000);
+            benchmark.SequentialWriteTest(25_000, 50);
+            Thread.Sleep(20000);
+            benchmark.AggregationTest(2);
+            Thread.Sleep(10000);
+            benchmark.AggregationTest(2);
+	    Thread.Sleep(10000);
+            benchmark.AggregationTest(2);
+
+ 
+	    /*foreach (var timePointsCount in new int[]{1000, 10000, 100000}){
                 
                  for (int i = 0; i < 3; i++){
                  benchmark.ResetDB();
@@ -45,7 +59,7 @@ namespace Benchmark
                  	}
 		 }
                  
-            }
+            }*/
         
 	}
 

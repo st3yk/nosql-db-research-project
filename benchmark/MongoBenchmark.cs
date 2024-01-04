@@ -42,12 +42,12 @@ public class MongoBenchmark : IDatabaseBenchmark{
         var settings = MongoClientSettings.FromConnectionString(connectionString);
 	settings.MinConnectionPoolSize = 100;
 	settings.MaxConnectionPoolSize = 10000;
-	this.client = new MongoClient(settings);
+	this.client = new MongoClient(connectionString);
         this.startTime = _startTime;
         this.RegisterDataModels();
         this.writeToFile = writeToFile;
         if(writeToFile){
-            this.outSW = File.AppendText("mongo_standalone.txt");
+            this.outSW = File.AppendText("mongo_standalone_agg.txt");
             this.outSW.AutoFlush = true;
         }
     }
