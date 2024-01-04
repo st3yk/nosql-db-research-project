@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Linq.Expressions;
 using Elasticsearch.Net;
 using Models;
 using Nest;
@@ -49,6 +50,8 @@ public class ElasticBenchmark : IDatabaseBenchmark{
         var watch = new Stopwatch();
         int recordNumber = 1;
         var searchTasks = new List<Task<BulkResponse>>();
+        long totalTime = 0;
+        watch.Start();
         foreach (var chunk in gen.GetTimepointChunk()){
             if(recordNumber%1_000 == 0 && recordNumber != 0) Console.WriteLine($"{100.0*recordNumber/timePointsCount:0.00}%");
             //watch.Start();
@@ -56,17 +59,9 @@ public class ElasticBenchmark : IDatabaseBenchmark{
             //watch.Stop();
             recordNumber += 1;
         }
-	int invalid = 0;
-        var task = Task.WhenAll(searchTasks).ContinueWith(t => {
-			watch.Stop();
-			Console.WriteLine($"Test finished after {watch.Elapsed.TotalSeconds}\n");
-			foreach(var res in t.Result){
-				if(res.Errors) invalid++;
-			}
-			Console.WriteLine($"Invalid: {invalid}");
-			});	
-        watch.Start();
-	task.Wait();
+        var task = Task.WhenAll(searchTasks);
+        task.Wait();
+        watch.Stop();
 	/*
 	var response = res[0];
 	Console.WriteLine(response);
@@ -110,6 +105,8 @@ public class ElasticBenchmark : IDatabaseBenchmark{
     public void SequentialReadTest(int readCount){
         Console.WriteLine($"Starting sequential read test for {readCount} reads...");
         Stopwatch watch = new System.Diagnostics.Stopwatch();
+        var searchRequests = new List<Task<ISearchResponse<Record>>>();
+        watch.Start();
         for (int i = 0; i < readCount; i++){
             var request = new SearchRequest<Record>(){
                 Query = new TermQuery(){
@@ -117,19 +114,23 @@ public class ElasticBenchmark : IDatabaseBenchmark{
                     Value = new Random().Next(3)
                 },
                 From = 0,
-		Size = 1
+		        Size = 1
             };
-        
-            watch.Start();
-            var res = this.client.Search<Record>(request);
-            watch.Stop();
             if(i%10_000 == 0 && i != 0) Console.WriteLine($"Finished {i} reads...");
+            searchRequests.Add(this.client.SearchAsync<Record>(request));
         }
-        Console.WriteLine("Sequential read test finished.");
-        outSW.WriteLine($"Sequential read test: {readCount} reads.");
-        outSW.WriteLine($"Total time for {readCount} reads: {watch.Elapsed.TotalSeconds} seconds.");
-        outSW.WriteLine($"Ops/second: {readCount / watch.Elapsed.TotalSeconds}.\n");
 
+        var tasks = Task.WhenAll(searchRequests);
+        tasks.Wait();
+        watch.Stop();
+	
+
+        Console.WriteLine("Sequential read test finished.");
+        if(this.writeToFile){
+            outSW.WriteLine($"Sequential read test: {readCount} reads.");
+            outSW.WriteLine($"Total time for {readCount} reads: {watch.Elapsed.TotalSeconds} seconds.");
+            outSW.WriteLine($"Ops/second: {readCount / watch.Elapsed.TotalSeconds}.\n");
+        }
     }
     public void AggregationTest(int queryCount){
         var watch = new System.Diagnostics.Stopwatch();
