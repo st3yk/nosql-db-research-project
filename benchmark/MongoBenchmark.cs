@@ -1,9 +1,37 @@
 using System.Diagnostics;
+using Elastic.Clients.Elasticsearch.Core.GetScriptContext;
 using Models;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 
+public class ConnectionThrottlingPipeline
+{
+    private readonly Semaphore openConnectionSemaphore;
+
+    public ConnectionThrottlingPipeline( IMongoClient client )
+    {
+        //Only grabbing half the available connections to hedge against collisions.
+        //If you send every operation through here
+        //you should be able to use the entire connection pool.
+        openConnectionSemaphore = new Semaphore( client.Settings.MaxConnectionPoolSize / 2,
+            client.Settings.MaxConnectionPoolSize / 2 );
+    }
+
+    public async Task<T> AddRequest<T>( Func<Task<T>> task )
+    {
+        openConnectionSemaphore.WaitOne();
+        try
+        {
+            var result = await task();
+            return result;
+        }
+        finally
+        {
+            openConnectionSemaphore.Release();
+        }
+    }
+}
 public class MongoBenchmark : IDatabaseBenchmark{
 
     private MongoClient client;
@@ -91,9 +119,10 @@ public class MongoBenchmark : IDatabaseBenchmark{
         watch.Start();
         IMongoCollection<Record> collection = this.client.GetDatabase("benchmark").GetCollection<Record>("metrics");
         FilterDefinition<Record> filter;
+        var pipeline = new ConnectionThrottlingPipeline(this.client);
         for (int i = 0; i < readCount; i++){
             filter = Builders<Record>.Filter.Eq(x => x.ue_data.pci, new Random().Next(3));
-            searchRequests.Add(collection.FindAsync(filter, new FindOptions<Record>(){Limit=1}));
+            searchRequests.Add(pipeline.AddRequest(() => collection.FindAsync(filter, new FindOptions<Record>(){Limit=1})));
             if(i%1000 == 0 && i != 0) Console.WriteLine($"Finished {i} reads...");
         }
         var tasks = Task.WhenAll(searchRequests);
