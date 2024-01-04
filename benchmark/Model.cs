@@ -40,20 +40,35 @@ namespace Models{
         [BsonElement("cfo")]
         public double cfo {get; set;} = new Random().NextDouble() * -1_000;
 
-        [Number(NumberType.Double, Name = "dlul_mcs")]
-        [JsonPropertyName("dlul_mcs")]
-        [BsonElement("dlul_mcs")]
-        public double dlul_mcs {get; set;} = new Random().NextDouble() * 20;
+        [Number(NumberType.Double, Name = "dl_mcs")]
+        [JsonPropertyName("dl_mcs")]
+        [BsonElement("dl_mcs")]
+        public double dl_mcs {get; set;} = new Random().NextDouble() * 20;
 
-        [Number(NumberType.Double, Name = "dlul_brate")]
-        [JsonPropertyName("dlul_brate")]
-        [BsonElement("dlul_brate")]
-        public double dlul_brate {get; set;} = new Random().NextDouble() * 50_000;
+        [Number(NumberType.Double, Name = "dl_brate")]
+        [JsonPropertyName("dl_brate")]
+        [BsonElement("dl_brate")]
+        public double dl_brate {get; set;} = new Random().NextDouble() * 50_000;
 
-        [Number(NumberType.Double, Name = "dlul_bler")]
-        [JsonPropertyName("dlul_bler")]
-        [BsonElement("dlul_bler")]
-        public double dlul_bler {get; set;} = new Random().NextDouble() * 100;
+        [Number(NumberType.Double, Name = "dl_bler")]
+        [JsonPropertyName("dl_bler")]
+        [BsonElement("dl_bler")]
+        public double dl_bler {get; set;} = new Random().NextDouble() * 100;
+
+        [Number(NumberType.Double, Name = "dl_mcs")]
+        [JsonPropertyName("dl_mcs")]
+        [BsonElement("dl_mcs")]
+        public double ul_mcs {get; set;} = new Random().NextDouble() * 20;
+
+        [Number(NumberType.Double, Name = "ul_brate")]
+        [JsonPropertyName("ul_brate")]
+        [BsonElement("ul_brate")]
+        public double ul_brate {get; set;} = new Random().NextDouble() * 50_000;
+
+        [Number(NumberType.Double, Name = "ul_bler")]
+        [JsonPropertyName("ul_bler")]
+        [BsonElement("ul_bler")]
+        public double ul_bler {get; set;} = new Random().NextDouble() * 100;
 
         [Number(NumberType.Double, Name = "dl_snr")]
         [JsonPropertyName("dl_snr")]

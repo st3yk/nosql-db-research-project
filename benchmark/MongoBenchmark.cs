@@ -120,7 +120,7 @@ public class MongoBenchmark : IDatabaseBenchmark{
                 .Match(dateRangeFilter)
                 .Match(existsFilter)
                 .Group(r => new {},
-                 g => new { avg = g.Average(x => x.ue_data.dlul_brate) });
+                 g => new { avg = g.Average(x => x.ue_data.dl_brate) });
                 
             
             Console.WriteLine(q);
@@ -143,7 +143,7 @@ public class MongoBenchmark : IDatabaseBenchmark{
                 .Match(dateRangeFilter)
                 .Match(existsFilter)
                 .Group(g => new {},
-                g => new { avg = g.Average(x => x.ue_data.dlul_brate) });
+                g => new { avg = g.Average(x => x.ue_data.dl_brate) });
             watch.Start();
             var res = q.First();
             watch.Stop();

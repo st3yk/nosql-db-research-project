@@ -150,7 +150,7 @@ public class ElasticBenchmark : IDatabaseBenchmark{
                 } & new ExistsQuery{
                     Field = Infer.Field<Record>(r => r.ue_data)
                	},
-		 Aggregations = new AverageAggregation("avg", Infer.Field<Record>(r => r.ue_data.dlul_brate)),
+		 Aggregations = new AverageAggregation("avg", Infer.Field<Record>(r => r.ue_data.dl_brate)),
 		 Size = 0
 		
             };
@@ -181,7 +181,7 @@ public class ElasticBenchmark : IDatabaseBenchmark{
                 } & new ExistsQuery{
                     Field = Infer.Field<Record>(r => r.ue_data)
                	},
-		 Aggregations = new AverageAggregation("avg", Infer.Field<Record>(r => r.ue_data.dlul_brate)),
+		 Aggregations = new AverageAggregation("avg", Infer.Field<Record>(r => r.ue_data.dl_brate)),
 		 Size = 0
 		
             };
