@@ -55,9 +55,9 @@ namespace Models{
         [BsonElement("dl_bler")]
         public double dl_bler {get; set;} = new Random().NextDouble() * 100;
 
-        [Number(NumberType.Double, Name = "dl_mcs")]
-        [JsonPropertyName("dl_mcs")]
-        [BsonElement("dl_mcs")]
+        [Number(NumberType.Double, Name = "ul_mcs")]
+        [JsonPropertyName("ul_mcs")]
+        [BsonElement("ul_mcs")]
         public double ul_mcs {get; set;} = new Random().NextDouble() * 20;
 
         [Number(NumberType.Double, Name = "ul_brate")]

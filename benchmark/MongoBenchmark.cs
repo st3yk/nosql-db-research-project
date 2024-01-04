@@ -11,7 +11,10 @@ public class MongoBenchmark : IDatabaseBenchmark{
     private StreamWriter? outSW;
     private bool writeToFile;
     public MongoBenchmark(string connectionString, DateTime _startTime, bool writeToFile){
-        this.client = new MongoClient(connectionString);
+        var settings = MongoClientSettings.FromConnectionString(connectionString);
+	settings.MinConnectionPoolSize = 100;
+	settings.MaxConnectionPoolSize = 10000;
+	this.client = new MongoClient(settings);
         this.startTime = _startTime;
         this.RegisterDataModels();
         this.writeToFile = writeToFile;

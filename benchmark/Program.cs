@@ -30,9 +30,24 @@ namespace Benchmark
 
         static void StartMongoBenchmark(){
             string connectionString = "mongodb://db-vm-1:27017";
-            MongoBenchmark benchmark = new MongoBenchmark(connectionString, DateTime.UtcNow);
-            
-        }
+            MongoBenchmark benchmark = new MongoBenchmark(connectionString, DateTime.UtcNow, true);
+            foreach (var timePointsCount in new int[]{1000, 10000, 100000}){
+                
+                 for (int i = 0; i < 3; i++){
+                 benchmark.ResetDB();
+                 benchmark.SetupDB();
+                 benchmark.SequentialWriteTest(timePointsCount, 1);
+                 }
+		 Thread.Sleep(10000);
+                 foreach(var readCount in new int[]{1000,10000,100000}){
+		 	for (int i = 0; i < 3; i++){
+                 		benchmark.SequentialReadTest(readCount);
+                 	}
+		 }
+                 
+            }
+        
+	}
 
         static void StartElasticBenchmark(){
             var nodes = new Uri[]{
