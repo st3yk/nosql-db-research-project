@@ -142,12 +142,6 @@ public class ElasticBenchmark : IDatabaseBenchmark{
             watch.Start();
             var res = this.client.Search<Record>(query);
             watch.Stop();
-            Console.WriteLine(res.Aggregations.Average("avg").Value);
-	    Console.WriteLine(res.Total);
-	    Console.WriteLine(res.Took);
-	    outSW.WriteLine($"AVG: {res.Aggregations.Average("avg").Value}");
-	    outSW.WriteLine($"Total: {res.Total}");
-	    outSW.WriteLine($"Took: {res.Took}");
 
 	    if(i%1_000 == 0 && i != 0) Console.WriteLine($"Finished {i} queries...");
         }
@@ -163,32 +157,31 @@ public class ElasticBenchmark : IDatabaseBenchmark{
         	outSW.WriteLine($"Starting aggregation test with {queryCount} querries ({startTime} - {endTimeTwoWeeks}...)");
 	}
 	watch.Reset();
-	Console.WriteLine($"TEST: {watch.Elapsed.TotalSeconds}\n");
-        for (int i = 0; i < queryCount; i++){
-            var query = new SearchRequest<Record>(){
-                Query = new DateRangeQuery{
-                    Field = Infer.Field<Record>(r => r.timestamp),
-                    GreaterThanOrEqualTo = startTime.ToUniversalTime(),
-                    LessThanOrEqualTo = endTimeTwoWeeks.ToUniversalTime()
-                },
-		 Aggregations =new AverageAggregation("avg", Infer.Field<Record>(r => r.ue_data.dl_brate)),
-		 Size = 0,
-		 TrackTotalHits = true
-		
-            };
-            
-            watch.Start();
-            var res = this.client.Search<Record>(query);
-            watch.Stop();
-            Console.WriteLine($"AVG: {res.Aggregations.Average("avg").Value}");
-	    Console.WriteLine($"Total: {res.Total}");
-	    Console.WriteLine($"Took: {res.Took}");
+    for (int i = 0; i < queryCount; i++){
+        var query = new SearchRequest<Record>(){
+            Query = new DateRangeQuery{
+                Field = Infer.Field<Record>(r => r.timestamp),
+                GreaterThanOrEqualTo = startTime.ToUniversalTime(),
+                LessThanOrEqualTo = endTimeTwoWeeks.ToUniversalTime()
+            },
+        Aggregations =new AverageAggregation("avg", Infer.Field<Record>(r => r.ue_data.dl_brate)),
+        Size = 0,
+        TrackTotalHits = true
+    
+        };
+        
+        watch.Start();
+        var res = this.client.Search<Record>(query);
+        watch.Stop();
+        Console.WriteLine($"AVG: {res.Aggregations.Average("avg").Value}");
+        Console.WriteLine($"Total: {res.Total}");
+        Console.WriteLine($"Took: {res.Took}");
 
-	    outSW.WriteLine($"AVG: {res.Aggregations.Average("avg").Value}");
-	    outSW.WriteLine($"Total: {res.Total}");
-	    outSW.WriteLine($"Took: {res.Took}");
-	    if(i%1_000 == 0 && i != 0) Console.WriteLine($"Finished {i} queries...");
-        }           
+        outSW.WriteLine($"AVG: {res.Aggregations.Average("avg").Value}");
+        outSW.WriteLine($"Total: {res.Total}");
+        outSW.WriteLine($"Took: {res.Took}");
+        if(i%1_000 == 0 && i != 0) Console.WriteLine($"Finished {i} queries...");
+    }           
         Console.WriteLine("Aggregation test finished.");
         Console.WriteLine($"Total time for {queryCount} queries: {watch.Elapsed.TotalSeconds} seconds.");
         Console.WriteLine($"Ops/second: {queryCount / watch.Elapsed.TotalSeconds}.\n");
@@ -196,7 +189,7 @@ public class ElasticBenchmark : IDatabaseBenchmark{
 		outSW.WriteLine("Aggregation test finished.");
         	outSW.WriteLine($"Total time for {queryCount} queries: {watch.Elapsed.TotalSeconds} seconds.");
         	outSW.WriteLine($"Ops/second: {queryCount / watch.Elapsed.TotalSeconds}.\n");
-	}
+	    }
 
     }
 
