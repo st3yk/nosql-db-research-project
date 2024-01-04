@@ -16,19 +16,22 @@ public class ElasticBenchmark : IDatabaseBenchmark{
         this.client = new ElasticClient(clientSettings);
         this.writeToFile = writeToFile;
         if(writeToFile){
-            outSW = File.AppendText("elastic_standalone.txt");
+            outSW = File.AppendText("elastic_standalone_agg.txt");
             outSW.AutoFlush = true;
         }
     }
 
-    public ElasticBenchmark(IEnumerable<Uri> nodeUris, DateTime _startTime){
+    public ElasticBenchmark(IEnumerable<Uri> nodeUris, DateTime _startTime, bool writeToFile = false){
         this.startTime = _startTime;
         var pool = new StaticConnectionPool(nodeUris);
         var clientSettings = new ConnectionSettings(pool).DefaultIndex("metrics");
         
         client = new ElasticClient(clientSettings);
-        outSW = File.AppendText("elastic_cluster.txt");
-        outSW.AutoFlush = true;
+    	this.writeToFile = writeToFile;
+	if(writeToFile){
+		outSW = File.AppendText("elastic_cluster_agg.txt");
+		outSW.AutoFlush = true;
+	}
     }
     ~ElasticBenchmark(){
     	outSW.Close();
@@ -43,41 +46,22 @@ public class ElasticBenchmark : IDatabaseBenchmark{
         this.client.Indices.Delete("metrics");
     }
    
-    public async void SequentialWriteTest(int timePointsCount, int dt){
-    	Console.WriteLine($"Write test: {timePointsCount*18} records...");
-        if(writeToFile) outSW.WriteLine($"Write test: {timePointsCount*18} records...");
+    public void SequentialWriteTest(int timePointsCount, int dt){
+    	Console.WriteLine($"Write test: {timePointsCount*15} records...");
+        if(writeToFile) outSW.WriteLine($"Write test: {timePointsCount*15} records...");
         BenchmarkDataGenerator gen = new BenchmarkDataGenerator(-1, timePointsCount, startTime, dt);
         var watch = new Stopwatch();
         int recordNumber = 1;
-        var searchTasks = new List<Task<BulkResponse>>();
-        long totalTime = 0;
-        watch.Start();
         foreach (var chunk in gen.GetTimepointChunk()){
             if(recordNumber%1_000 == 0 && recordNumber != 0) Console.WriteLine($"{100.0*recordNumber/timePointsCount:0.00}%");
-            //watch.Start();
-            searchTasks.Add(this.client.IndexManyAsync(chunk));
-            //watch.Stop();
+            watch.Start();
+            this.client.IndexMany(chunk);
+            watch.Stop();
             recordNumber += 1;
         }
-        var task = Task.WhenAll(searchTasks);
-        task.Wait();
-        watch.Stop();
-	/*
-	var response = res[0];
-	Console.WriteLine(response);
-            if (response.IsValid)
-            {
-                Console.WriteLine("IndexMany request successful.");
-		Console.WriteLine($"{response.DebugInformation}");
-                // Process the bulk response if needed
-            }
-            else
-            {
-                Console.WriteLine($"Error indexing documents: {response.DebugInformation}");
-            }
-        */
-        //outSW.WriteLine($"Write test of {timePointsCount*18} records finished.");
-        //outSW.WriteLine($"Total time only inserting data: {watch.Elapsed.TotalSeconds}\n");
+        
+       	outSW.WriteLine($"Write test of {timePointsCount*15} records finished.");
+        outSW.WriteLine($"Total time only inserting data: {watch.Elapsed.TotalSeconds}\n");
         Console.WriteLine($"Write test finished after {watch.Elapsed.TotalSeconds} seconds");
     }
     public void BulkLoad(int timePointsCount, int chunkSize){
@@ -104,19 +88,19 @@ public class ElasticBenchmark : IDatabaseBenchmark{
     }
     public void SequentialReadTest(int readCount){
         Console.WriteLine($"Starting sequential read test for {readCount} reads...");
-        Stopwatch watch = new System.Diagnostics.Stopwatch();
+       	Stopwatch watch = new System.Diagnostics.Stopwatch();
         var searchRequests = new List<Task<ISearchResponse<Record>>>();
         watch.Start();
         for (int i = 0; i < readCount; i++){
             var request = new SearchRequest<Record>(){
                 Query = new TermQuery(){
-                    Field = Infer.Field<Record>(r => r.ue_data.pci),
-                    Value = new Random().Next(3)
+                    Field = Infer.Field<Record>(r => r.ue_data.ue_id),
+                    Value = new Random().Next(15)
                 },
                 From = 0,
 		        Size = 1
             };
-            if(i%10_000 == 0 && i != 0) Console.WriteLine($"Finished {i} reads...");
+            if(i%10_000 == 0 && i != 0) Console.WriteLine(i);
             searchRequests.Add(this.client.SearchAsync<Record>(request));
         }
 
@@ -126,7 +110,8 @@ public class ElasticBenchmark : IDatabaseBenchmark{
 	
 
         Console.WriteLine("Sequential read test finished.");
-        if(this.writeToFile){
+        Console.WriteLine(watch.Elapsed.TotalSeconds);
+	if(this.writeToFile){
             outSW.WriteLine($"Sequential read test: {readCount} reads.");
             outSW.WriteLine($"Total time for {readCount} reads: {watch.Elapsed.TotalSeconds} seconds.");
             outSW.WriteLine($"Ops/second: {readCount / watch.Elapsed.TotalSeconds}.\n");
@@ -138,8 +123,8 @@ public class ElasticBenchmark : IDatabaseBenchmark{
         var endTimeTwoWeeks = startTime.AddDays(14);
         Console.WriteLine($"Aggregation test: {queryCount} queries, one week");
         Console.WriteLine($"Starting aggregation test with {queryCount} queries ({startTime} - {endTimeOneWeek}...)");
-        outSW.WriteLine($"Aggregation test: {queryCount} queries, one week");
-        outSW.WriteLine($"Starting aggregation test with {queryCount} queries ({startTime} - {endTimeOneWeek}...)");
+        if(this.writeToFile) outSW.WriteLine($"Aggregation test: {queryCount} queries, one week");
+        if(this.writeToFile) outSW.WriteLine($"Starting aggregation test with {queryCount} queries ({startTime} - {endTimeOneWeek}...)");
         
 	for (int i = 0; i < queryCount; i++){
             var query = new SearchRequest<Record>(){
@@ -147,11 +132,10 @@ public class ElasticBenchmark : IDatabaseBenchmark{
                     Field = Infer.Field<Record>(r => r.timestamp),
                     GreaterThanOrEqualTo = startTime.ToUniversalTime(),
                     LessThanOrEqualTo = endTimeOneWeek.ToUniversalTime()
-                } & new ExistsQuery{
-                    Field = Infer.Field<Record>(r => r.ue_data)
-               	},
-		 Aggregations = new AverageAggregation("avg", Infer.Field<Record>(r => r.ue_data.dl_brate)),
-		 Size = 0
+                },
+		 Aggregations =new AverageAggregation("avg", Infer.Field<Record>(r => r.ue_data.dl_brate)),
+		 Size = 0,
+		 TrackTotalHits = true
 		
             };
             
@@ -159,6 +143,12 @@ public class ElasticBenchmark : IDatabaseBenchmark{
             var res = this.client.Search<Record>(query);
             watch.Stop();
             Console.WriteLine(res.Aggregations.Average("avg").Value);
+	    Console.WriteLine(res.Total);
+	    Console.WriteLine(res.Took);
+	    outSW.WriteLine($"AVG: {res.Aggregations.Average("avg").Value}");
+	    outSW.WriteLine($"Total: {res.Total}");
+	    outSW.WriteLine($"Took: {res.Took}");
+
 	    if(i%1_000 == 0 && i != 0) Console.WriteLine($"Finished {i} queries...");
         }
 
@@ -166,39 +156,47 @@ public class ElasticBenchmark : IDatabaseBenchmark{
         Console.WriteLine($"Total time for {queryCount} queries: {watch.Elapsed.TotalSeconds} seconds.");
         Console.WriteLine($"Ops/second: {queryCount / watch.Elapsed.TotalSeconds}.\n");
         Console.WriteLine($"Starting aggregation test with {queryCount} querries ({startTime} - {endTimeTwoWeeks}...)");
-       	outSW.WriteLine("Aggregation test finished.");
-        outSW.WriteLine($"Total time for {queryCount} queries: {watch.Elapsed.TotalSeconds} seconds.");
-        outSW.WriteLine($"Ops/second: {queryCount / watch.Elapsed.TotalSeconds}.\n");
-        outSW.WriteLine($"Starting aggregation test with {queryCount} querries ({startTime} - {endTimeTwoWeeks}...)");
-	
+       	if(this.writeToFile){
+		outSW.WriteLine("Aggregation test finished.");
+        	outSW.WriteLine($"Total time for {queryCount} queries: {watch.Elapsed.TotalSeconds} seconds.");
+        	outSW.WriteLine($"Ops/second: {queryCount / watch.Elapsed.TotalSeconds}.\n");
+        	outSW.WriteLine($"Starting aggregation test with {queryCount} querries ({startTime} - {endTimeTwoWeeks}...)");
+	}
 	watch.Reset();
+	Console.WriteLine($"TEST: {watch.Elapsed.TotalSeconds}\n");
         for (int i = 0; i < queryCount; i++){
             var query = new SearchRequest<Record>(){
                 Query = new DateRangeQuery{
                     Field = Infer.Field<Record>(r => r.timestamp),
                     GreaterThanOrEqualTo = startTime.ToUniversalTime(),
                     LessThanOrEqualTo = endTimeTwoWeeks.ToUniversalTime()
-                } & new ExistsQuery{
-                    Field = Infer.Field<Record>(r => r.ue_data)
-               	},
-		 Aggregations = new AverageAggregation("avg", Infer.Field<Record>(r => r.ue_data.dl_brate)),
-		 Size = 0
+                },
+		 Aggregations =new AverageAggregation("avg", Infer.Field<Record>(r => r.ue_data.dl_brate)),
+		 Size = 0,
+		 TrackTotalHits = true
 		
             };
             
             watch.Start();
             var res = this.client.Search<Record>(query);
             watch.Stop();
-            Console.WriteLine(res.Aggregations.Average("avg").Value);
+            Console.WriteLine($"AVG: {res.Aggregations.Average("avg").Value}");
+	    Console.WriteLine($"Total: {res.Total}");
+	    Console.WriteLine($"Took: {res.Took}");
+
+	    outSW.WriteLine($"AVG: {res.Aggregations.Average("avg").Value}");
+	    outSW.WriteLine($"Total: {res.Total}");
+	    outSW.WriteLine($"Took: {res.Took}");
 	    if(i%1_000 == 0 && i != 0) Console.WriteLine($"Finished {i} queries...");
         }           
         Console.WriteLine("Aggregation test finished.");
         Console.WriteLine($"Total time for {queryCount} queries: {watch.Elapsed.TotalSeconds} seconds.");
         Console.WriteLine($"Ops/second: {queryCount / watch.Elapsed.TotalSeconds}.\n");
-        outSW.WriteLine("Aggregation test finished.");
-        outSW.WriteLine($"Total time for {queryCount} queries: {watch.Elapsed.TotalSeconds} seconds.");
-        outSW.WriteLine($"Ops/second: {queryCount / watch.Elapsed.TotalSeconds}.\n");
-        
+        if(this.writeToFile){
+		outSW.WriteLine("Aggregation test finished.");
+        	outSW.WriteLine($"Total time for {queryCount} queries: {watch.Elapsed.TotalSeconds} seconds.");
+        	outSW.WriteLine($"Ops/second: {queryCount / watch.Elapsed.TotalSeconds}.\n");
+	}
 
     }
 

@@ -40,36 +40,45 @@ namespace Benchmark
                 new Uri("http://db-vm-2:9200"),
                 new Uri("http://db-vm-3:9200")
             };
-            ElasticBenchmark benchmark = new ElasticBenchmark(nodes, DateTime.UtcNow); 
+            ElasticBenchmark benchmark = new ElasticBenchmark(nodes[0], DateTime.UtcNow, true); 
             
-            benchmark.ResetDB();
-            benchmark.SetupDB();
-            benchmark.SequentialWriteTest(50000, 1);
+            //benchmark.ResetDB();
+            //benchmark.SetupDB();
+            //benchmark.SequentialWriteTest(1000, 1);
+	    //benchmark.SequentialReadTest(1000);
 
-            // foreach (var timePointsCount in new int[]{1000, 10000, 100000}){
+  /*          foreach (var timePointsCount in new int[]{1000, 10000, 100000}){
                 
-            //     for (int i = 0; i < 5; i++){
-            //     benchmark.ResetDB();
-            //     benchmark.SetupDB();
-            //     benchmark.SequentialWriteTest(timePointsCount, 1);
-            //     }
-		    //     Thread.Sleep(10000);
-            //     foreach (var readCount in new int[]{100, 1000, 10000}){
-            //         for (int i = 0; i < 5; i++){
-            //             benchmark.SequentialReadTest(readCount);
-            //         }
-            //     }
+                 for (int i = 0; i < 3; i++){
+                 benchmark.ResetDB();
+                 benchmark.SetupDB();
+                 benchmark.SequentialWriteTest(timePointsCount, 1);
+                 }
+		 Thread.Sleep(10000);
+                 foreach(var readCount in new int[]{1000,10000,100000}){
+		 	for (int i = 0; i < 3; i++){
+                 		benchmark.SequentialReadTest(readCount);
+                 	}
+		 }
+                 
 
             
 
-            // }
+            }
            
-            //     benchmark.ResetDB();
-            //     benchmark.SetupDB();
-            //     //benchmark.BulkLoad(1_000, 1_000);
-            //     benchmark.SequentialWriteTest(250_000, 5);
-            //     Thread.Sleep(20000);
-            //     benchmark.AggregationTest(1);
-        }
+*/
+	    
+	    benchmark.ResetDB();
+            benchmark.SetupDB();
+            //benchmark.BulkLoad(1_000, 1_000);
+            benchmark.SequentialWriteTest(25_000, 50);
+            Thread.Sleep(20000);
+            benchmark.AggregationTest(2);
+            Thread.Sleep(10000);
+            benchmark.AggregationTest(2);
+	    Thread.Sleep(10000);
+            benchmark.AggregationTest(2);
+
+	}
     }
 }
