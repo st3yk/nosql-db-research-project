@@ -1,7 +1,9 @@
 ---
 - hosts: all
   become: true
-  name: Start first node of elasticsearch cluster
+  name: Start elasticsearch cluster
+  vars:
+    interface: eth0 # eth0 for gcp, eth1 for vagrant, eno1 for lab
   tasks:
   - name: Permit traffic in default zone for elasticsearch service
     ansible.posix.firewalld:
@@ -22,7 +24,7 @@
       mode: "0660"
 
   - name: Get node IP addr
-    ansible.builtin.shell: set -o pipefail && ip a l eth1 | awk '/inet / { print $2 }' | awk -F '/' '{ print $1 }'
+    ansible.builtin.shell: set -o pipefail && ip a l {{ interface }} | awk '/inet / { print $2 }' | awk -F '/' '{ print $1 }'
     register: ip
     changed_when: false
 

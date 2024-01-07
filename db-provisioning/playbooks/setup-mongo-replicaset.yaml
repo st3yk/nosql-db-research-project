@@ -2,16 +2,9 @@
 - hosts: all
   become: true
   name: Set up MongoDB Replicaset
+  vars:
+    interface: eth0 # eth0 for gcp, eth1 for vagrant, eno1 for lab
   tasks:
-  # TODO, USE KEYFILES
-  # - name: Copy keyfile
-  #   ansible.builtin.copy:
-  #     src: ../cfgs/mongo-keyfile # change with `openssl rand -base64 756 > mongo-keyfile`
-  #     dest: /home/vagrant/.mongo-security/
-  #     owner: mongod
-  #     group: mongod
-  #     mode: '0400'
-
     - name: Copy config
       ansible.builtin.copy:
         src: ../cfgs/mongod.conf
@@ -21,7 +14,7 @@
         mode: "0644"
 
     - name: Get node IP addr
-      ansible.builtin.shell: set -o pipefail && ip a l eth1 | awk '/inet / { print $2 }' | awk -F '/' '{ print $1 }'
+      ansible.builtin.shell: set -o pipefail && ip a l {{ interface }} | awk '/inet / { print $2 }' | awk -F '/' '{ print $1 }'
       register: ip
       changed_when: false
 

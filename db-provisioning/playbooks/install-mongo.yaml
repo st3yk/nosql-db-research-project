@@ -42,7 +42,7 @@
       become: false
       ansible.builtin.git:
         repo: https://github.com/mongodb/mongodb-selinux
-        dest: /home/vagrant/mongodb-selinux
+        dest: /tmp/mongodb-selinux
         single_branch: true
         version: master
 
@@ -50,11 +50,11 @@
       become: false
       ansible.builtin.command: make
       args:
-        chdir: /home/vagrant/mongodb-selinux
+        chdir: /tmp/mongodb-selinux
       changed_when: false # TODO
 
     - name: Install selinux policy
       ansible.builtin.command: make install
       args:
-        chdir: /home/vagrant/mongodb-selinux
+        chdir: /tmp/mongodb-selinux
       changed_when: false # TODO
