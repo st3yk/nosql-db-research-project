@@ -2,6 +2,8 @@
 - hosts: all
   become: true
   name: Install Cassandra Database
+  vars:
+    interface: eth0 # eth0 for gcp, eth1 for vagrant, eno1 for lab
   tasks:
     - name: Install java-1.8.0
       ansible.builtin.yum:
@@ -30,16 +32,16 @@
         path: /etc/yum.conf
         line: exclude=cassandra
 
-    # - name: Copy cassandra conf file from host
-    #   ansible.builtin.copy:
-    #     src: ../cfgs/cassandra.yaml
-    #     dest: /etc/cassandra/conf/cassandra.yaml
-    #     owner: root
-    #     group: root
-    #     mode: "0644"
+    - name: Copy cassandra conf file from host
+      ansible.builtin.copy:
+        src: ../cfgs/cassandra.yaml
+        dest: /etc/cassandra/conf/cassandra.yaml
+        owner: root
+        group: root
+        mode: "0644"
 
     - name: Get host IP addr
-      ansible.builtin.shell: set -o pipefail && ip a l eth0 | awk '/inet / { print $2 }' | awk -F '/' '{ print $1 }'
+      ansible.builtin.shell: set -o pipefail && ip a l {{ interface }} | awk '/inet / { print $2 }' | awk -F '/' '{ print $1 }'
       register: ip
       changed_when: false
 

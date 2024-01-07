@@ -1,5 +1,4 @@
-# Bucket to store website
-
+# Provisioning VMs for benchmark + db cluster
 resource "google_compute_address" "benchmark_static_ip" {
   name = "benchmark-static-ip"
   address_type = "EXTERNAL"
