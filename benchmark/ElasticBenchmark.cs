@@ -117,6 +117,23 @@ public class ElasticBenchmark : IDatabaseBenchmark{
             outSW.WriteLine($"Ops/second: {readCount / watch.Elapsed.TotalSeconds}.\n");
         }
     }
+
+    public void ReadAllTest(){
+        var watch = new Stopwatch();
+        watch.Start(); 
+        var res = this.client.Search<Record>(s => s
+            .From(0)
+            .Size(10_000)
+            .MatchAll()
+            .Scroll("5m"));
+        while(res.Documents.Count() > 0){
+            Console.WriteLine(res.Documents.Count());
+            var docs = res.Documents;
+            res = this.client.Scroll<Record>("5m", res.ScrollId);
+        }
+        watch.Stop();
+        Console.WriteLine($"Write all test, time: {watch.Elapsed.TotalSeconds} seconds");
+    }
     public void AggregationTest(int queryCount){
         var watch = new System.Diagnostics.Stopwatch();
         var endTimeOneWeek = startTime.AddDays(7);

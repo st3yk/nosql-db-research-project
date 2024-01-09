@@ -56,7 +56,7 @@ public class MongoBenchmark : IDatabaseBenchmark{
     }
     public void SetupDB(){
         Console.WriteLine("Setting up the DB...");
-        CreateCollectionOptions options = new CreateCollectionOptions{TimeSeriesOptions = new TimeSeriesOptions("timestamp")};
+        CreateCollectionOptions options = new CreateCollectionOptions{TimeSeriesOptions = new TimeSeriesOptions("timestamp", "ue_data")};
         this.client.GetDatabase("benchmark").CreateCollection("metrics", options);
         var model = new CreateIndexModel<Record>("{timestamp: 1}");
         
@@ -137,6 +137,18 @@ public class MongoBenchmark : IDatabaseBenchmark{
                 outSW.WriteLine($"Ops/second: {readCount / watch.Elapsed.TotalSeconds}.\n");
         }
 
+    }
+    public void ReadAllTest(){
+        var watch = new Stopwatch();
+        var collection = this.client.GetDatabase("benchmark").GetCollection<Record>("metrcis");
+        
+        watch.Start();
+        var cursor = collection.Find(_ => true).ToCursor();   
+        while(cursor.MoveNext()){
+            Console.WriteLine(cursor.Current.Count());
+        }
+        watch.Stop();
+        Console.WriteLine($"Write all test, time: {watch.Elapsed.TotalSeconds} seconds");
     }
     public void AggregationTest(int queryCount){
         var watch = new System.Diagnostics.Stopwatch();
