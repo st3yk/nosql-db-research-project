@@ -6,7 +6,7 @@ pilot-study/Mongo/mongo-data
 **/[Bb]in/
 **/[Oo]bj/
 **/*.csproj
-**/research-project-409812-b3f65acbb513.json
+**/research-project-*.json
 */.terraform/*
 
 # .tfstate files
