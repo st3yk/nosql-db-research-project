@@ -17,10 +17,6 @@ public class CassandraBenchmark : IDatabaseBenchmark
             .Build();
         //Create a session (similar to a database connection)
         session = cluster.Connect();
-        // Create keyspace
-        session.Execute($"CREATE KEYSPACE IF NOT EXISTS {KEY_SPACE}" + " WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}");
-        // Use keyspace
-        session.Execute($"USE {KEY_SPACE}");
         
     }
 
@@ -41,7 +37,7 @@ public class CassandraBenchmark : IDatabaseBenchmark
         var watch = new Stopwatch();
         Random random = new Random();
         for (int i = 0; i < readCount; i++){      
-            var statement = new SimpleStatement($"SELECT dlul_mcs  FROM UEDATA WHERE ue_id = ?", random.Next(0,14));
+            var statement = new SimpleStatement($"SELECT * FROM UEDATA WHERE timestamp = ? LIMIT 1", startDate.AddSeconds(random.Next(0,10_000)));
             watch.Start();
             var row = session.Execute(statement);
 
@@ -107,7 +103,11 @@ public class CassandraBenchmark : IDatabaseBenchmark
 
     public void SetupDB()
     {
-         var table1 = new Table<UEData>(session);
+        // Create keyspace
+        session.Execute($"CREATE KEYSPACE IF NOT EXISTS {KEY_SPACE}" + " WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}");
+        // Use keyspace
+        session.Execute($"USE {KEY_SPACE}");
+        var table1 = new Table<UEData>(session);
         table1.CreateIfNotExists();
     }
 
