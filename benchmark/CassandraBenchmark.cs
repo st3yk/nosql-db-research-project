@@ -3,6 +3,34 @@ using System.Diagnostics;
 using Cassandra;
 using Cassandra.Data.Linq;
 
+public class CassandraConnectionThrottlingPipeline
+{
+    private readonly Semaphore openConnectionSemaphore;
+
+    public CassandraConnectionThrottlingPipeline()
+    {
+        //Only grabbing half the available connections to hedge against collisions.
+        //If you send every operation through here
+        //you should be able to use the entire connection pool.
+        openConnectionSemaphore = new Semaphore( 1024,
+            1024 );
+    }
+
+    public async Task<T> AddRequest<T>( Func<Task<T>> task )
+    {
+        openConnectionSemaphore.WaitOne();
+        try
+        {
+            var result = await task();
+            return result;
+        }
+        finally
+        {
+            openConnectionSemaphore.Release();
+        }
+    }
+}
+
 public class CassandraBenchmark : IDatabaseBenchmark
 {
     const string KEY_SPACE = "benchmark";
@@ -41,9 +69,10 @@ public class CassandraBenchmark : IDatabaseBenchmark
         Random random = new Random();
         watch.Start();
         List<Task> list = new List<Task>();
+        var pipeline = new CassandraConnectionThrottlingPipeline();
         for (int i = 0; i < readCount; i++){      
             var statement = new SimpleStatement($"SELECT * FROM UEDATA WHERE timestamp_column = ? LIMIT 1", startDate.AddSeconds(random.Next(0,10_000)));
-            list.Add(session.ExecuteAsync(statement));            
+            list.Add(pipeline.AddRequest(()=> session.ExecuteAsync(statement)));            
             
         }
         Task.WhenAll(list).Wait();
