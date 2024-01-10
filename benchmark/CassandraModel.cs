@@ -5,11 +5,7 @@ public class Table{}
 [Table("UEDATA")]
 
 public class UEData : Table{
-    
-    [ClusteringKey(0)]
-
-    public Guid guid  {get; set;}
-    
+        
     [ClusteringKey(1)]
     public DateTimeOffset timestamp_column {get; set;}
 

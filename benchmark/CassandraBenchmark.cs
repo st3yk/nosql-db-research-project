@@ -99,6 +99,7 @@ public class CassandraBenchmark : IDatabaseBenchmark
 
     public void ResetDB()
     {
+        session.Execute($"USE {KEY_SPACE}");
         session.Execute("DROP TABLE IF EXISTS RecordCassandra");
         session.Execute("DROP TYPE IF EXISTS RecordCassandra");
 
@@ -115,6 +116,7 @@ public class CassandraBenchmark : IDatabaseBenchmark
         session.Execute($"USE {KEY_SPACE}");
         var table1 = new Table<UEData>(session);
         table1.CreateIfNotExists();
+	session.Execute("CREATE INDEX IF NOT EXISTS indexed_timestamp_column ON UEDATA (timestamp_column);");
     }
 
     public BatchStatement GenerateTestData(int count, DateTime timestamp, string UeDataTableName){
@@ -130,7 +132,7 @@ public class CassandraBenchmark : IDatabaseBenchmark
                                 ue_id = ue_id + bs_id * 5,
                                 pci = bs_id 
                     };
-                    var simpleStatement =  new SimpleStatement($"INSERT INTO {UeDataTableName} (guid, timestamp_column, ue_id, cc, pci, earfcn, rsrp, pl, cfo, dl_mcs, dl_brate, dl_bler, ul_mcs, ul_brate, ul_bler, dl_snr, ul_buff) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", Guid.NewGuid(), uEData.timestamp_column,
+                    var simpleStatement =  new SimpleStatement($"INSERT INTO {UeDataTableName} (timestamp_column, ue_id, cc, pci, earfcn, rsrp, pl, cfo, dl_mcs, dl_brate, dl_bler, ul_mcs, ul_brate, ul_bler, dl_snr, ul_buff) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", uEData.timestamp_column,
                         uEData.ue_id, uEData.cc, uEData.pci, uEData.earfcn, uEData.rsrp, uEData.pl, uEData.cfo, uEData.dl_mcs, uEData.dl_brate, uEData.dl_bler, uEData.ul_mcs, uEData.ul_brate, uEData.ul_bler, uEData.dl_snr, uEData.ul_buff); 
                     //batch.Add(this.session.ExecuteAsync(simpleStatement));
                     batch.Add(simpleStatement);
