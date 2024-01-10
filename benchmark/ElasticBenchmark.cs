@@ -16,8 +16,8 @@ public class ElasticBenchmark : IDatabaseBenchmark{
         this.client = new ElasticClient(clientSettings);
         this.writeToFile = writeToFile;
         if(writeToFile){
-            outSW = File.AppendText("elastic_standalone_agg.txt");
-            outSW.AutoFlush = true;
+            outSW = File.AppendText("elastic_standalone.txt");
+            outSW.AutoFlush = false;
         }
     }
 
@@ -34,7 +34,10 @@ public class ElasticBenchmark : IDatabaseBenchmark{
 	}
     }
     ~ElasticBenchmark(){
-    	outSW.Close();
+	if(writeToFile){
+		outSW.Flush();
+    		outSW.Close();
+	}
     } 
     public void SetupDB(){
         this.client.Indices.Create("metrics", 
@@ -55,13 +58,17 @@ public class ElasticBenchmark : IDatabaseBenchmark{
         foreach (var chunk in gen.GetTimepointChunk()){
             if(recordNumber%1_000 == 0 && recordNumber != 0) Console.WriteLine($"{100.0*recordNumber/timePointsCount:0.00}%");
             watch.Start();
-            this.client.IndexMany(chunk);
+            var res = this.client.IndexMany(chunk);
             watch.Stop();
+	    if(recordNumber%500 == 0) Thread.Sleep(1000);
             recordNumber += 1;
         }
-        
-       	outSW.WriteLine($"Write test of {timePointsCount*15} records finished.");
-        outSW.WriteLine($"Total time only inserting data: {watch.Elapsed.TotalSeconds}\n");
+	watch.Start();
+	this.client.Indices.Refresh();
+	watch.Stop();
+        //Console.WriteLine(recordNumber);
+       	//outSW.WriteLine($"Write test of {timePointsCount*15} records finished.");
+        //outSW.WriteLine($"Total time only inserting data: {watch.Elapsed.TotalSeconds}\n");
         Console.WriteLine($"Write test finished after {watch.Elapsed.TotalSeconds} seconds");
     }
     public void BulkLoad(int timePointsCount, int chunkSize){
@@ -94,8 +101,8 @@ public class ElasticBenchmark : IDatabaseBenchmark{
         for (int i = 0; i < readCount; i++){
             var request = new SearchRequest<Record>(){
                 Query = new TermQuery(){
-                    Field = Infer.Field<Record>(r => r.ue_data.ue_id),
-                    Value = new Random().Next(15)
+                    Field = Infer.Field<Record>(r => r.timestamp),
+                    Value = startTime.AddSeconds(new Random().Next(10_000))
                 },
                 From = 0,
 		        Size = 1

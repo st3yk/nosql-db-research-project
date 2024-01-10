@@ -33,17 +33,21 @@ namespace Benchmark
             MongoBenchmark benchmark = new MongoBenchmark(connectionString, DateTime.UtcNow, true);
            
 	   
-	    benchmark.ResetDB();
+	   // benchmark.ResetDB();
             benchmark.SetupDB();
             //benchmark.BulkLoad(1_000, 1_000);
-            benchmark.SequentialWriteTest(25_000, 50);
-            Thread.Sleep(20000);
+            benchmark.SequentialWriteTest(10_000, 1);
+	    //Thread.Sleep(5_000);
+            //benchmark.SequentialReadTest(1_000);
+	    //benchmark.SequentialReadTest(10_000);
+	    //benchmark.SequentialReadTest(100_000); 
+	    /* Thread.Sleep(20000);
             benchmark.AggregationTest(2);
             Thread.Sleep(10000);
             benchmark.AggregationTest(2);
 	    Thread.Sleep(10000);
             benchmark.AggregationTest(2);
-
+*/
  
 	    /*foreach (var timePointsCount in new int[]{1000, 10000, 100000}){
                 
@@ -63,51 +67,29 @@ namespace Benchmark
         
 	}
 
+	static void StartCassandraBenchmark(){
+		CassandraBenchmark benchmark = new CassandraBenchmark("db-vm-1");
+	
+	}
+
         static void StartElasticBenchmark(){
             var nodes = new Uri[]{
                 new Uri("http://db-vm-1:9200"),
                 new Uri("http://db-vm-2:9200"),
                 new Uri("http://db-vm-3:9200")
             };
-            ElasticBenchmark benchmark = new ElasticBenchmark(nodes[0], DateTime.UtcNow, true); 
+            ElasticBenchmark benchmark = new ElasticBenchmark(nodes[0], DateTime.UtcNow, false); 
             
-            //benchmark.ResetDB();
-            //benchmark.SetupDB();
-            //benchmark.SequentialWriteTest(1000, 1);
-	    //benchmark.SequentialReadTest(1000);
-
-  /*          foreach (var timePointsCount in new int[]{1000, 10000, 100000}){
-                
-                 for (int i = 0; i < 3; i++){
-                 benchmark.ResetDB();
-                 benchmark.SetupDB();
-                 benchmark.SequentialWriteTest(timePointsCount, 1);
-                 }
-		 Thread.Sleep(10000);
-                 foreach(var readCount in new int[]{1000,10000,100000}){
-		 	for (int i = 0; i < 3; i++){
-                 		benchmark.SequentialReadTest(readCount);
-                 	}
-		 }
-                 
-
-            
-
-            }
-           
-*/
-	    
 	    benchmark.ResetDB();
-            benchmark.SetupDB();
-            //benchmark.BulkLoad(1_000, 1_000);
-            benchmark.SequentialWriteTest(25_000, 50);
-            Thread.Sleep(20000);
-            benchmark.AggregationTest(2);
-            Thread.Sleep(10000);
-            benchmark.AggregationTest(2);
-	    Thread.Sleep(10000);
-            benchmark.AggregationTest(2);
+	    Thread.Sleep(1_000);
+	    benchmark.SetupDB();
+	    Thread.Sleep(1_000);
+	    benchmark.SequentialWriteTest(10_000, 1);
+	    //benchmark.SequentialReadTest(1000);
+	    //benchmark.SequentialReadTest(10_000);
+	    //benchmark.SequentialReadTest(100_000);
 
+           
 	}
     }
 }

@@ -121,9 +121,9 @@ public class MongoBenchmark : IDatabaseBenchmark{
         FilterDefinition<Record> filter;
         var pipeline = new ConnectionThrottlingPipeline(this.client);
         for (int i = 0; i < readCount; i++){
-            filter = Builders<Record>.Filter.Eq(x => x.ue_data.pci, new Random().Next(3));
+            filter = Builders<Record>.Filter.Eq(x => x.timestamp, startTime.AddSeconds(new Random().Next(10_000)));
             searchRequests.Add(pipeline.AddRequest(() => collection.FindAsync(filter, new FindOptions<Record>(){Limit=1})));
-            if(i%1000 == 0 && i != 0) Console.WriteLine($"Finished {i} reads...");
+            if(i%10000 == 0 && i != 0) Console.WriteLine($"Finished {i} reads...");
         }
         var tasks = Task.WhenAll(searchRequests);
         tasks.Wait();
