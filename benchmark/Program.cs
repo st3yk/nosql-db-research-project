@@ -25,6 +25,9 @@ namespace Benchmark
                 case "elastic":
                     StartElasticBenchmark();
                     break;
+		case "cassandra":
+		    StartCassandraBenchmark();
+		    break;
             }
         }
 
@@ -68,8 +71,13 @@ namespace Benchmark
 	}
 
 	static void StartCassandraBenchmark(){
-		CassandraBenchmark benchmark = new CassandraBenchmark("db-vm-1");
-	
+		CassandraBenchmark benchmark = new CassandraBenchmark(new List<string>{"db-vm-1"});
+		benchmark.ResetDB();
+		benchmark.SetupDB();
+		benchmark.BulkLoad(10_000, 1);
+		benchmark.SequentialReadTest(1_000);
+		benchmark.SequentialReadTest(10_000);
+		benchmark.SequentialReadTest(100_000);
 	}
 
         static void StartElasticBenchmark(){
