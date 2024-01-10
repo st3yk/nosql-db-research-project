@@ -37,7 +37,7 @@ public class CassandraBenchmark : IDatabaseBenchmark
         var watch = new Stopwatch();
         Random random = new Random();
         for (int i = 0; i < readCount; i++){      
-            var statement = new SimpleStatement($"SELECT * FROM UEDATA WHERE timestamp = ? LIMIT 1", startDate.AddSeconds(random.Next(0,10_000)));
+            var statement = new SimpleStatement($"SELECT * FROM UEDATA WHERE timestamp_column = ? LIMIT 1", startDate.AddSeconds(random.Next(0,10_000)));
             watch.Start();
             var row = session.Execute(statement);
 
@@ -97,8 +97,8 @@ public class CassandraBenchmark : IDatabaseBenchmark
         session.Execute("DROP TABLE IF EXISTS RecordCassandra");
         session.Execute("DROP TYPE IF EXISTS RecordCassandra");
 
-        session.Execute("DROP TABLE IF EXISTS UEData");
-        session.Execute("DROP TYPE IF EXISTS UEData");
+        session.Execute("DROP TABLE IF EXISTS UEDATA");
+        session.Execute("DROP TYPE IF EXISTS UEDATA");
     }
 
     public void SetupDB()
@@ -125,8 +125,7 @@ public class CassandraBenchmark : IDatabaseBenchmark
                                 ue_id = ue_id + bs_id * 5,
                                 pci = bs_id 
                     };
-                    var simpleStatement =  new SimpleStatement($"INSERT INTO {UeDataTableName} (guid, timestamp_column, ue_id, cc, pci, earfcn, rsrp, pl, cfo, dl_mcs, dl_brate, dl_bler, ul_mcs, ul_brate, ul_bler, dl_snr, ul_buf" +
-                        " dlul_brate, dlul_bler, dl_snr, ul_buff) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", Guid.NewGuid(), uEData.timestamp_column,
+                    var simpleStatement =  new SimpleStatement($"INSERT INTO {UeDataTableName} (guid, timestamp_column, ue_id, cc, pci, earfcn, rsrp, pl, cfo, dl_mcs, dl_brate, dl_bler, ul_mcs, ul_brate, ul_bler, dl_snr, ul_buff) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", Guid.NewGuid(), uEData.timestamp_column,
                         uEData.ue_id, uEData.cc, uEData.pci, uEData.earfcn, uEData.rsrp, uEData.pl, uEData.cfo, uEData.dl_mcs, uEData.dl_brate, uEData.dl_bler, uEData.ul_mcs, uEData.ul_brate, uEData.ul_bler, uEData.dl_snr, uEData.ul_buff); 
                     //batch.Add(this.session.ExecuteAsync(simpleStatement));
                     batch.Add(simpleStatement);
