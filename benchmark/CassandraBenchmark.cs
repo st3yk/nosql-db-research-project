@@ -23,29 +23,32 @@ public class CassandraBenchmark : IDatabaseBenchmark
     public void BulkLoad(int timePointsCount, int chunkSize)
     {
         Stopwatch watch = new Stopwatch();
-
+        DateTime timestamp = startDate;
         for(int i = 0; i < timePointsCount; i++){
-            var batch = GenerateTestData(1,  "UEDATA");
+            var batch = GenerateTestData(1,  timestamp, "UEDATA");
             watch.Start();
             session.Execute(batch);
-            watch.Stop();       
+            watch.Stop();   
+            timestamp = timestamp.AddSeconds(1);    
         }
         Console.WriteLine($"Write test: {timePointsCount} Whole time taken: {watch.Elapsed.TotalSeconds} seconds");
     }
     public void SequentialReadTest(int readCount)
     {
-        var watch = new Stopwatch();
+         var watch = new Stopwatch();
         Random random = new Random();
+        watch.Start();
+        List<Task> list = new List<Task>();
         for (int i = 0; i < readCount; i++){      
             var statement = new SimpleStatement($"SELECT * FROM UEDATA WHERE timestamp = ? LIMIT 1", startDate.AddSeconds(random.Next(0,10_000)));
-            watch.Start();
-            var row = session.Execute(statement);
-
+            list.Add(session.ExecuteAsync(statement));            
             
-            watch.Stop();
         }
-        Console.WriteLine($"Test finished after {watch.Elapsed.TotalSeconds} seconds.");
+        Task.WhenAll(list).Wait();
+        watch.Stop();
+        Console.WriteLine($"BulkReadTest: Whole {readCount} loops was done in {watch.Elapsed.TotalSeconds} seconds.");
     }
+    
     public void ReadAllTest(){
         var watch = new Stopwatch();
         var statement = new SimpleStatement("SELECT * FROM UEDATA");
@@ -111,17 +114,16 @@ public class CassandraBenchmark : IDatabaseBenchmark
         table1.CreateIfNotExists();
     }
 
-    public BatchStatement GenerateTestData(int count, string UeDataTableName){
+    public BatchStatement GenerateTestData(int count, DateTime timestamp, string UeDataTableName){
         BatchStatement batch = new BatchStatement();
         var random = new Random();
-        var date = startDate;
         for (var i = 0; i < count; i++){
             
             for (int bs_id = 0; bs_id < 3; bs_id++){
                 
                 for (int ue_id = 0; ue_id < 5; ue_id++){
                     UEData uEData = new UEData{
-                                timestamp_column = startDate.ToUniversalTime(), 
+                                timestamp_column = timestamp.ToUniversalTime(), 
                                 ue_id = ue_id + bs_id * 5,
                                 pci = bs_id 
                     };
