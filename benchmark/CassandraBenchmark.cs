@@ -14,6 +14,8 @@ public class CassandraBenchmark : IDatabaseBenchmark
         Console.WriteLine(contactPoints.Count());
         var cluster = Cluster.Builder()
             .AddContactPoint(contactPoints[0]) // Replace with your Cassandra server's address
+            .WithQueryOptions(new QueryOptions().SetConsistencyLevel(ConsistencyLevel.One))
+            .WithSocketOptions(new SocketOptions().SetReadTimeoutMillis(60000))
             .Build();
         //Create a session (similar to a database connection)
         session = cluster.Connect();
@@ -40,7 +42,7 @@ public class CassandraBenchmark : IDatabaseBenchmark
         watch.Start();
         List<Task> list = new List<Task>();
         for (int i = 0; i < readCount; i++){      
-            var statement = new SimpleStatement($"SELECT * FROM UEDATA WHERE timestamp = ? LIMIT 1", startDate.AddSeconds(random.Next(0,10_000)));
+            var statement = new SimpleStatement($"SELECT * FROM UEDATA WHERE timestamp_column = ? LIMIT 1", startDate.AddSeconds(random.Next(0,10_000)));
             list.Add(session.ExecuteAsync(statement));            
             
         }
@@ -101,7 +103,8 @@ public class CassandraBenchmark : IDatabaseBenchmark
         session.Execute("DROP TYPE IF EXISTS RecordCassandra");
 
         session.Execute("DROP TABLE IF EXISTS UEDATA");
-        session.Execute("DROP TYPE IF EXISTS UEDATA");
+        session.Execute("DROP TYPE IF EXISTS UEdata");
+        session.Execute("DROP TYPE IF EXISTS UEData");
     }
 
     public void SetupDB()
